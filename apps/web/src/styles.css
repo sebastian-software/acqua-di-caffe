@@ -522,6 +522,11 @@ figcaption {
   font-weight: 740;
 }
 
+.source-info {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+}
+
 .mineral-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(58px, 1fr));

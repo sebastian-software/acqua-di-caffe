@@ -237,7 +237,10 @@ export function App() {
               <Database aria-hidden="true" size={22} />
               <div>
                 <h2 id="catalog-heading">Mineralwasser-Datenbank</h2>
-                <p>{visibleWaters.length} Einträge. Jede Karte zeigt Filter- und Espresso-Note.</p>
+                <p>
+                  {visibleWaters.length} quellengeprüfte Einträge. Jede Karte zeigt Filter- und
+                  Espresso-Note.
+                </p>
               </div>
             </div>
 
@@ -345,6 +348,9 @@ function WaterCard({ water, onSelect }: { water: EnrichedMineralWater; onSelect:
             <span key={place}>{place}</span>
           ))}
         </div>
+        <p className="source-info">
+          {water.sourceLabel} · geprüft {formatDate(water.lastVerified)}
+        </p>
       </div>
 
       <dl className="mineral-list" aria-label="Mineralwerte">
@@ -578,6 +584,12 @@ function formatNumber(value: number): string {
     maximumFractionDigits: 2,
     minimumFractionDigits: 0,
   }).format(value);
+}
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("de-DE", {
+    dateStyle: "medium",
+  }).format(new Date(`${value}T00:00:00`));
 }
 
 function clamp(value: number, min: number, max: number): number {

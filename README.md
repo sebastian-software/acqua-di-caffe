@@ -5,7 +5,7 @@ Kleine React-App zur Berechnung von Kaffeewasser aus Mineralwasser-Etiketten.
 ## Pakete
 
 - `packages/core`: Reine TypeScript-Funktionen für Gesamthärte, Alkalinität, Scoring und Zielbereich-Klassifikation.
-- `packages/water-data`: Lokale JSON-Datenbank stiller Mineralwasser mit Quellen-URLs.
+- `packages/water-data`: Lokale JSON-Datenbank stiller Mineralwasser mit geprüften Quellen-URLs.
 - `apps/web`: React/Vite-App für manuelle Eingabe, Suche und Diagramm.
 
 ## Formeln
@@ -16,6 +16,13 @@ Kleine React-App zur Berechnung von Kaffeewasser aus Mineralwasser-Etiketten.
 Die Formeln und Zielbereiche orientieren sich an der Kaffeemacher-Kaffeewasser-Anleitung. Die App
 zeigt zusätzlich tolerante Schulnoten je Wasser für Filterkaffee und Espresso, statt Wasser hart als
 geeignet/ungeeignet zu klassifizieren.
+
+## Datenquellen
+
+Der Mineralwasser-Katalog nimmt nur Einträge auf, deren Mineralwerte über Herstellerangaben,
+offizielle Produktdatenblätter, amtliche Laboranalysen oder seriöse Verbraucherprüfungen belegbar
+sind. Aggregierte Drittseiten ohne Primärquelle werden per Test ausgeschlossen. Dadurch ist der
+Katalog kleiner, aber nachvollziehbarer und Git-reviewbar.
 
 ## Entwicklung
 

@@ -17,6 +17,8 @@ export type MineralWater = {
   calciumMgL: number;
   magnesiumMgL: number;
   bicarbonateMgL: number;
+  sourceType: "manufacturer" | "manufacturer_lab" | "official_lab" | "consumer_test";
+  sourceLabel: string;
   sourceUrl: string;
   lastVerified: string;
 };
@@ -27,7 +29,7 @@ export type EnrichedMineralWater = MineralWater & {
   score: number;
 };
 
-export const waters = watersJson satisfies MineralWater[];
+export const waters = watersJson as MineralWater[];
 
 export function enrichWater(water: MineralWater, target: CoffeeTarget): EnrichedMineralWater {
   const profile = calculateWaterHardness({
