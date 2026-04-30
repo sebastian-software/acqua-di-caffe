@@ -1,6 +1,7 @@
 import {
   calculateWaterHardness,
   classifyWaterProfile,
+  TARGET_RANGES,
   type CoffeeTarget,
   type SingleCoffeeTarget,
   type WaterHardness,
@@ -413,6 +414,8 @@ function WaterChart({ profile, target }: { profile: WaterHardness | null; target
     padding.top + plotHeight - (clamp(value, 0, yMax) / yMax) * plotHeight;
   const currentX = profile ? x(profile.alkalinity) : x(0);
   const currentY = profile ? y(profile.totalHardness) : y(0);
+  const filterRange = TARGET_RANGES.filter;
+  const espressoRange = TARGET_RANGES.espresso;
   const isClamped =
     profile &&
     (profile.alkalinity > xMax ||
@@ -476,19 +479,19 @@ function WaterChart({ profile, target }: { profile: WaterHardness | null; target
 
         <TargetRect
           label="Filter"
-          x={x(1)}
-          y={y(3)}
-          width={x(2) - x(1)}
-          height={y(2) - y(3)}
+          x={x(filterRange.alkalinity.min)}
+          y={y(filterRange.totalHardness.max)}
+          width={x(filterRange.alkalinity.max) - x(filterRange.alkalinity.min)}
+          height={y(filterRange.totalHardness.min) - y(filterRange.totalHardness.max)}
           active={target === "filter" || target === "all"}
           className="filter-range"
         />
         <TargetRect
           label="Espresso"
-          x={x(2)}
-          y={y(6)}
-          width={x(4) - x(2)}
-          height={y(3) - y(6)}
+          x={x(espressoRange.alkalinity.min)}
+          y={y(espressoRange.totalHardness.max)}
+          width={x(espressoRange.alkalinity.max) - x(espressoRange.alkalinity.min)}
+          height={y(espressoRange.totalHardness.min) - y(espressoRange.totalHardness.max)}
           active={target === "espresso" || target === "all"}
           className="espresso-range"
         />
@@ -514,8 +517,8 @@ function WaterChart({ profile, target }: { profile: WaterHardness | null; target
         ) : null}
       </svg>
       <figcaption>
-        <span className="legend-item legend-filter">Perfekter Bereich für Filterkaffee</span>
-        <span className="legend-item legend-espresso">Perfekter Bereich für Espresso</span>
+        <span className="legend-item legend-filter">Empfohlener Bereich für Filterkaffee</span>
+        <span className="legend-item legend-espresso">Empfohlener Bereich für Espresso</span>
         <span className="legend-item legend-current">Dein Wasser</span>
         {isClamped ? <span className="chart-note">Punkt liegt außerhalb der Skala.</span> : null}
       </figcaption>

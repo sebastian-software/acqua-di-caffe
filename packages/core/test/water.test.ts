@@ -32,20 +32,30 @@ describe("calculateWaterHardness", () => {
 describe("target ranges", () => {
   it("treats values on filter boundaries as matching", () => {
     expect(isInTargetRange({ totalHardness: 2, alkalinity: 1 }, "filter")).toBe(true);
-    expect(isInTargetRange({ totalHardness: 3, alkalinity: 2 }, "filter")).toBe(true);
+    expect(isInTargetRange({ totalHardness: 7, alkalinity: 4 }, "filter")).toBe(true);
   });
 
   it("treats values on espresso boundaries as matching", () => {
     expect(isInTargetRange({ totalHardness: 3, alkalinity: 2 }, "espresso")).toBe(true);
-    expect(isInTargetRange({ totalHardness: 6, alkalinity: 4 }, "espresso")).toBe(true);
+    expect(isInTargetRange({ totalHardness: 7, alkalinity: 4 }, "espresso")).toBe(true);
   });
 
   it("classifies the best target when all targets are requested", () => {
-    const classification = classifyWaterProfile({ totalHardness: 4.1, alkalinity: 2.8 }, "all");
+    const classification = classifyWaterProfile({ totalHardness: 2.2, alkalinity: 1.4 }, "all");
 
     expect(classification.best.roundedGrade).toBe(1);
-    expect(classification.best.target).toBe("espresso");
-    expect(classification.evaluations.filter.roundedGrade).toBeGreaterThan(1);
+    expect(classification.best.target).toBe("filter");
+    expect(classification.evaluations.espresso.roundedGrade).toBeGreaterThan(1);
+  });
+
+  it("treats SCA-compatible filter water as matching", () => {
+    const volvicLike = calculateWaterHardness({
+      calcium: 12,
+      magnesium: 8,
+      bicarbonate: 74,
+    });
+
+    expect(isInTargetRange(volvicLike, "filter")).toBe(true);
   });
 
   it("uses tolerant school grades for small misses", () => {

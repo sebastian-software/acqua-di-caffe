@@ -13,9 +13,13 @@ Kleine React-App zur Berechnung von Kaffeewasser aus Mineralwasser-Etiketten.
 - Gesamthärte: `calciumMgL / 7.1 + magnesiumMgL / 4.35`
 - Alkalinität: `bicarbonateMgL / 21.8`
 
-Die Formeln und Zielbereiche orientieren sich an der Kaffeemacher-Kaffeewasser-Anleitung. Die App
-zeigt zusätzlich tolerante Schulnoten je Wasser für Filterkaffee und Espresso, statt Wasser hart als
+Die Formeln orientieren sich an der Kaffeemacher-Kaffeewasser-Anleitung. Die Zielbereiche sind
+gegen weitere Referenzen wie SCA/Water for Coffee, Coffee Circle und Roastmarket abgeglichen; der
+Filterbereich ist deshalb bewusst breiter als der enge Kaffeemacher-Idealbereich. Die App zeigt
+zusätzlich tolerante Schulnoten je Wasser für Filterkaffee und Espresso, statt Wasser hart als
 geeignet/ungeeignet zu klassifizieren.
+
+Details stehen in [docs/calculation-references.md](docs/calculation-references.md).
 
 ## Datenquellen
 

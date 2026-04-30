@@ -50,11 +50,11 @@ export type WaterClassification = {
 
 export const TARGET_RANGES: Record<SingleCoffeeTarget, TargetRange> = {
   filter: {
-    totalHardness: { min: 2, max: 3 },
-    alkalinity: { min: 1, max: 2 },
+    totalHardness: { min: 2, max: 7 },
+    alkalinity: { min: 1, max: 4 },
   },
   espresso: {
-    totalHardness: { min: 3, max: 6 },
+    totalHardness: { min: 3, max: 7 },
     alkalinity: { min: 2, max: 4 },
   },
 };
