@@ -56,6 +56,20 @@
     "lastVerified": "2026-04-29"
   },
   {
+    "id": "vio-still",
+    "name": "Still",
+    "brand": "ViO",
+    "country": "Deutschland",
+    "availableAt": ["Lebensmittelhandel", "Getränkemarkt"],
+    "calciumMgL": 51,
+    "magnesiumMgL": 5.3,
+    "bicarbonateMgL": 152,
+    "sourceType": "manufacturer",
+    "sourceLabel": "Herstellerangabe, Coca-Cola Produkt-Nährwertangaben",
+    "sourceUrl": "https://www.coca-cola.com/de/de/brands/vio/vio-still#accordion-5888ad2cf6-item-0fcae1910d",
+    "lastVerified": "2026-04-30"
+  },
+  {
     "id": "vilsa-naturelle",
     "name": "Naturelle",
     "brand": "VILSA",
@@ -68,6 +82,20 @@
     "sourceLabel": "Herstellerangabe mit Shopfinder",
     "sourceUrl": "https://vilsa.de/mineralwasser/naturelle/",
     "lastVerified": "2026-04-29"
+  },
+  {
+    "id": "aqua-roemer-quelle-still",
+    "name": "Mineralwasser Still",
+    "brand": "Aqua Römer Quelle",
+    "country": "Deutschland",
+    "availableAt": ["Händlersuche", "Regionaler Handel"],
+    "calciumMgL": 46.6,
+    "magnesiumMgL": 25.6,
+    "bicarbonateMgL": 224,
+    "sourceType": "manufacturer_lab",
+    "sourceLabel": "Herstellerangabe, Eurofins Institut Jäger, laufende Kontrollanalysen",
+    "sourceUrl": "https://www.aquaroemerquelle.de/produkte/mineralwasser-still",
+    "lastVerified": "2026-04-30"
   },
   {
     "id": "odenwald-quelle-naturelle",
@@ -98,6 +126,20 @@
     "lastVerified": "2026-04-29"
   },
   {
+    "id": "aqua-vitale-naturelle",
+    "name": "Naturelle",
+    "brand": "Aqua Vitale",
+    "country": "Deutschland",
+    "availableAt": ["Regionaler Handel", "Getränkemarkt"],
+    "calciumMgL": 128,
+    "magnesiumMgL": 54,
+    "bicarbonateMgL": 420,
+    "sourceType": "manufacturer_lab",
+    "sourceLabel": "Hersteller-Produktdatenblatt, Institut Dr. Lörcher, laufende Kontrollen",
+    "sourceUrl": "https://www.winkels.de/images/marken/produktinfos/AquaVitale_Produktblatt_1l_PET-MW_0.pdf",
+    "lastVerified": "2026-04-30"
+  },
+  {
     "id": "rheinfels-quelle-naturelle",
     "name": "Naturelle",
     "brand": "Rheinfels Quelle",
@@ -122,8 +164,8 @@
     "bicarbonateMgL": 360,
     "sourceType": "manufacturer",
     "sourceLabel": "Herstellerangabe",
-    "sourceUrl": "https://www.evian.com/en_int/what-is-mineral-water/water-quality/",
-    "lastVerified": "2026-04-29"
+    "sourceUrl": "https://www.evian.com/de_ch/unser-mineralwasser/wasserqualitaet/",
+    "lastVerified": "2026-04-30"
   },
   {
     "id": "aquanur-still",
@@ -140,6 +182,20 @@
     "lastVerified": "2026-04-29"
   },
   {
+    "id": "hassia-naturell",
+    "name": "Naturell",
+    "brand": "Hassia",
+    "country": "Deutschland",
+    "availableAt": ["Händlersuche", "Getränkemarkt"],
+    "calciumMgL": 109,
+    "magnesiumMgL": 20.1,
+    "bicarbonateMgL": 391,
+    "sourceType": "manufacturer_lab",
+    "sourceLabel": "Herstellerangabe, SGS Institut Fresenius Qualitätssiegel",
+    "sourceUrl": "https://www.hassia-sprudel.de/produkte/mineralwasser/still",
+    "lastVerified": "2026-04-30"
+  },
+  {
     "id": "adelholzener-naturell",
     "name": "Naturell",
     "brand": "Adelholzener",
@@ -154,6 +210,20 @@
     "lastVerified": "2026-04-29"
   },
   {
+    "id": "elisabethen-quelle-pur",
+    "name": "Pur",
+    "brand": "Elisabethen Quelle",
+    "country": "Deutschland",
+    "availableAt": ["Regionaler Handel", "Getränkemarkt"],
+    "calciumMgL": 96.9,
+    "magnesiumMgL": 28.3,
+    "bicarbonateMgL": 431,
+    "sourceType": "manufacturer_lab",
+    "sourceLabel": "Herstellerangabe, Bio-Qualität geprüft durch SGS Institut Fresenius",
+    "sourceUrl": "https://www.elisabethenquelle.de/unsere-produkte/nat%C3%BCrliches-mineralwasser/elisabethen-quelle-pur",
+    "lastVerified": "2026-04-30"
+  },
+  {
     "id": "ensinger-gourmet-bio-still",
     "name": "Gourmet Bio-Mineralwasser Still",
     "brand": "Ensinger",
@@ -163,9 +233,9 @@
     "magnesiumMgL": 52,
     "bicarbonateMgL": 405,
     "sourceType": "manufacturer_lab",
-    "sourceLabel": "Hersteller-Produktdatenblatt, Institut Romeis",
-    "sourceUrl": "https://www.ensinger.de/fileadmin/media/Produktdatenblaetter/Produktspezifikation-Ensinger-Gourmet-Bio-Mineralwasser-Still-202403.pdf",
-    "lastVerified": "2026-04-29"
+    "sourceLabel": "Herstellerangabe mit Produktdatenblatt, Institut Romeis",
+    "sourceUrl": "https://www.ensinger.de/produkte/ensinger-gourmet/ensinger-gourmet-bio-mineralwasser-still",
+    "lastVerified": "2026-04-30"
   },
   {
     "id": "gerolsteiner-naturell",
@@ -180,5 +250,19 @@
     "sourceLabel": "Herstellerangabe, SGS Institut Fresenius zertifiziert",
     "sourceUrl": "https://www.gerolsteiner.de/produkte/mineralwasser/naturell",
     "lastVerified": "2026-04-29"
+  },
+  {
+    "id": "alwa-naturelle",
+    "name": "Naturelle",
+    "brand": "alwa",
+    "country": "Deutschland",
+    "availableAt": ["Händlersuche", "Regionaler Handel"],
+    "calciumMgL": 520,
+    "magnesiumMgL": 65,
+    "bicarbonateMgL": 415,
+    "sourceType": "manufacturer_lab",
+    "sourceLabel": "Herstellerangabe, Analysenauszug in mg/l",
+    "sourceUrl": "https://www.alwa-mineralwasser.de/mineralwasser/still.html",
+    "lastVerified": "2026-04-30"
   }
 ]
