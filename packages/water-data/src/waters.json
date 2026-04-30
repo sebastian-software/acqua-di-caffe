@@ -28,6 +28,20 @@
     "lastVerified": "2026-04-29"
   },
   {
+    "id": "odenwald-quelle-gourmet-naturelle",
+    "name": "Gourmet Naturelle",
+    "brand": "Odenwald Quelle",
+    "country": "Deutschland",
+    "availableAt": ["Gastronomie", "Regionaler Handel"],
+    "calciumMgL": 10.4,
+    "magnesiumMgL": 2.6,
+    "bicarbonateMgL": 46,
+    "sourceType": "manufacturer_lab",
+    "sourceLabel": "Herstellerangabe, Institut Fresenius, laufend kontrolliert",
+    "sourceUrl": "https://www.odenwaldquelle.de/sortiment/mineralwasser",
+    "lastVerified": "2026-04-30"
+  },
+  {
     "id": "volvic-naturelle",
     "name": "Naturelle",
     "brand": "Volvic",
@@ -54,6 +68,20 @@
     "sourceLabel": "Herstellerangabe mit Shopfinder",
     "sourceUrl": "https://vilsa.de/mineralwasser/naturelle/",
     "lastVerified": "2026-04-29"
+  },
+  {
+    "id": "odenwald-quelle-naturelle",
+    "name": "Naturelle",
+    "brand": "Odenwald Quelle",
+    "country": "Deutschland",
+    "availableAt": ["Regionaler Handel", "Getränkemarkt"],
+    "calciumMgL": 103,
+    "magnesiumMgL": 23.5,
+    "bicarbonateMgL": 427,
+    "sourceType": "manufacturer_lab",
+    "sourceLabel": "Herstellerangabe, Institut Fresenius, laufend kontrolliert",
+    "sourceUrl": "https://www.odenwaldquelle.de/sortiment/mineralwasser",
+    "lastVerified": "2026-04-30"
   },
   {
     "id": "fuerst-bismarck-mineralwasser-still",
