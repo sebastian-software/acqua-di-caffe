@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateWaterHardness,
   classifyWaterProfile,
+  evaluateWaterProfile,
   isInTargetRange,
   scoreWaterProfile,
 } from "../src/index";
@@ -56,6 +57,26 @@ describe("target ranges", () => {
     });
 
     expect(isInTargetRange(volvicLike, "filter")).toBe(true);
+    expect(evaluateWaterProfile(volvicLike, "filter")).toMatchObject({
+      zone: "extended",
+      roundedGrade: 2,
+      inIdealRange: false,
+      inExtendedRange: true,
+    });
+  });
+
+  it("separates core, extended, and outside zones", () => {
+    expect(evaluateWaterProfile({ totalHardness: 2.5, alkalinity: 1.5 }, "filter")).toMatchObject({
+      zone: "core",
+      roundedGrade: 1,
+    });
+    expect(evaluateWaterProfile({ totalHardness: 6.8, alkalinity: 3.8 }, "filter")).toMatchObject({
+      zone: "extended",
+      roundedGrade: 2,
+    });
+    expect(evaluateWaterProfile({ totalHardness: 12, alkalinity: 7 }, "filter")).toMatchObject({
+      zone: "outside",
+    });
   });
 
   it("uses tolerant school grades for small misses", () => {

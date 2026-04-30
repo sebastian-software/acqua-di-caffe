@@ -1,9 +1,10 @@
 import {
   calculateWaterHardness,
   classifyWaterProfile,
-  TARGET_RANGES,
+  TARGET_ZONES,
   type CoffeeTarget,
   type SingleCoffeeTarget,
+  type TargetRange,
   type WaterHardness,
   type WaterTargetEvaluation,
 } from "@coffeewater/core";
@@ -50,6 +51,12 @@ const gradeFilterLabels: Record<GradeFilter, string> = {
   top: "Note 1-2",
   solid: "Note 1-3",
   avoid: "Note 4-6",
+};
+
+const zoneLabels: Record<WaterTargetEvaluation["zone"], string> = {
+  core: "Kernbereich",
+  extended: "erweiterter Bereich",
+  outside: "außerhalb",
 };
 
 const initialWater = (waters.find((water) => water.id === DEFAULT_WATER_ID) ??
@@ -396,7 +403,9 @@ function GradeBadge({
         {compact ? shortTargetLabels[evaluation.target] : targetLabels[evaluation.target]}
       </span>
       <strong>Note {evaluation.roundedGrade}</strong>
-      <small>{evaluation.label}</small>
+      <small>
+        {evaluation.label} · {zoneLabels[evaluation.zone]}
+      </small>
     </div>
   );
 }
@@ -414,8 +423,8 @@ function WaterChart({ profile, target }: { profile: WaterHardness | null; target
     padding.top + plotHeight - (clamp(value, 0, yMax) / yMax) * plotHeight;
   const currentX = profile ? x(profile.alkalinity) : x(0);
   const currentY = profile ? y(profile.totalHardness) : y(0);
-  const filterRange = TARGET_RANGES.filter;
-  const espressoRange = TARGET_RANGES.espresso;
+  const filterZones = TARGET_ZONES.filter;
+  const espressoZones = TARGET_ZONES.espresso;
   const isClamped =
     profile &&
     (profile.alkalinity > xMax ||
@@ -478,22 +487,36 @@ function WaterChart({ profile, target }: { profile: WaterHardness | null; target
         />
 
         <TargetRect
-          label="Filter"
-          x={x(filterRange.alkalinity.min)}
-          y={y(filterRange.totalHardness.max)}
-          width={x(filterRange.alkalinity.max) - x(filterRange.alkalinity.min)}
-          height={y(filterRange.totalHardness.min) - y(filterRange.totalHardness.max)}
+          label="Filter erweitert"
+          range={filterZones.extended}
+          x={x}
+          y={y}
           active={target === "filter" || target === "all"}
-          className="filter-range"
+          className="filter-range range-extended"
         />
         <TargetRect
-          label="Espresso"
-          x={x(espressoRange.alkalinity.min)}
-          y={y(espressoRange.totalHardness.max)}
-          width={x(espressoRange.alkalinity.max) - x(espressoRange.alkalinity.min)}
-          height={y(espressoRange.totalHardness.min) - y(espressoRange.totalHardness.max)}
+          label="Filter Kern"
+          range={filterZones.core}
+          x={x}
+          y={y}
+          active={target === "filter" || target === "all"}
+          className="filter-range range-core"
+        />
+        <TargetRect
+          label="Espresso erweitert"
+          range={espressoZones.extended}
+          x={x}
+          y={y}
           active={target === "espresso" || target === "all"}
-          className="espresso-range"
+          className="espresso-range range-extended"
+        />
+        <TargetRect
+          label="Espresso Kern"
+          range={espressoZones.core}
+          x={x}
+          y={y}
+          active={target === "espresso" || target === "all"}
+          className="espresso-range range-core"
         />
 
         <text x={width / 2} y={height - 8} className="axis-label" textAnchor="middle">
@@ -517,8 +540,8 @@ function WaterChart({ profile, target }: { profile: WaterHardness | null; target
         ) : null}
       </svg>
       <figcaption>
-        <span className="legend-item legend-filter">Empfohlener Bereich für Filterkaffee</span>
-        <span className="legend-item legend-espresso">Empfohlener Bereich für Espresso</span>
+        <span className="legend-item legend-core">Kernbereich</span>
+        <span className="legend-item legend-extended">Erweiterter Bereich</span>
         <span className="legend-item legend-current">Dein Wasser</span>
         {isClamped ? <span className="chart-note">Punkt liegt außerhalb der Skala.</span> : null}
       </figcaption>
@@ -528,25 +551,28 @@ function WaterChart({ profile, target }: { profile: WaterHardness | null; target
 
 function TargetRect({
   label,
+  range,
   x,
   y,
-  width,
-  height,
   active,
   className,
 }: {
   label: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  range: TargetRange;
+  x: (value: number) => number;
+  y: (value: number) => number;
   active: boolean;
   className: string;
 }) {
+  const rectX = x(range.alkalinity.min);
+  const rectY = y(range.totalHardness.max);
+  const width = x(range.alkalinity.max) - x(range.alkalinity.min);
+  const height = y(range.totalHardness.min) - y(range.totalHardness.max);
+
   return (
     <g className={active ? "range-active" : "range-muted"}>
-      <rect x={x} y={y} width={width} height={height} className={className} />
-      <text x={x + 12} y={y + 24} className="range-label">
+      <rect x={rectX} y={rectY} width={width} height={height} className={className} />
+      <text x={rectX + 12} y={rectY + 24} className="range-label">
         {label}
       </text>
     </g>

@@ -19,15 +19,21 @@ Quelle: [Kaffeemacher Kaffeewasser-Anleitung](https://kaffeemacher.de/blogs/kaff
 ## App-Zielbereiche
 
 Die App bewertet Wasser nicht mehr nur gegen den sehr engen
-Kaffeemacher-Filterbereich. Stattdessen nutzt sie pragmatische Zielbereiche:
+Kaffeemacher-Filterbereich. Stattdessen nutzt sie pro Getränk zwei Zonen:
 
-| Ziel         | Gesamthaerte | Alkalinitaet | Begruendung                                                                                                                                                          |
-| ------------ | -----------: | -----------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Filterkaffee |    `2-7 dGH` |  `1-4 d Alk` | Nimmt den engen Kaffeemacher-Filterbereich als unteres Ideal ernst, laesst aber SCA-/Water-for-Coffee-kompatible Wasser wie Volvic nicht unnoetig schlecht aussehen. |
-| Espresso     |    `3-7 dGH` |  `2-4 d Alk` | Kaffeemacher nennt `3-6 dGH` und `2-4 d Alk`; Roastmarket und Coffee Circle nennen fuer Espresso ebenfalls bzw. sinngemaess `3-7 dGH`.                               |
+- `Kernbereich`: enger Bereich, der aus den strengeren Quellen gut ableitbar ist.
+- `Erweiterter Bereich`: fachlich plausibler Bereich, in dem die Quellen weniger
+  einheitlich sind, besonders wegen der breiteren SCA-/Water-for-Coffee-Spanne.
 
-Wasser ausserhalb dieser Bereiche wird weiterhin graduell bewertet. Ein kleiner
-Abstand ergibt also eher Note 2 statt "ungeeignet".
+| Ziel         | Kernbereich GH | Kernbereich Alk | Erweiterter Bereich GH | Erweiterter Bereich Alk | Begruendung                                                                                                                                                                         |
+| ------------ | -------------: | --------------: | ---------------------: | ----------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Filterkaffee |      `2-3 dGH` |     `1-2 d Alk` |              `2-7 dGH` |             `1-4 d Alk` | Nimmt den engen Kaffeemacher-/Earlybird-/Roastmarket-Filterbereich als Kern ernst, laesst aber SCA-/Water-for-Coffee-kompatible Wasser wie Volvic nicht unnoetig schlecht aussehen. |
+| Espresso     |      `3-6 dGH` |     `2-4 d Alk` |              `3-7 dGH` |             `2-4 d Alk` | Kaffeemacher und Earlybird nennen `3-6 dGH`; Roastmarket und Coffee Circle nennen fuer Espresso ebenfalls bzw. sinngemaess `3-7 dGH`.                                               |
+
+Wasser im Kernbereich bekommt Note 1. Wasser im erweiterten Bereich wird als
+gut bewertet, aber nicht als Kern-Treffer. Wasser ausserhalb dieser Bereiche
+wird weiterhin graduell bewertet. Ein kleiner Abstand ergibt also eher Note 2
+statt "ungeeignet".
 
 ## Quellenabgleich
 
@@ -50,11 +56,11 @@ Abstand ergibt also eher Note 2 statt "ungeeignet".
 ## Warum Filterkaffee breiter bewertet wird
 
 Die alte App-Logik behandelte `2-3 dGH` und `1-2 d Alk` als den einzigen
-Note-1-Bereich fuer Filterkaffee. Das ist als enges Ideal aus Kaffeemacher
-vertretbar, aber im Vergleich zu SCA/Water for Coffee zu streng. Mit dem neuen
-Bereich `2-7 dGH` und `1-4 d Alk` bleiben sehr weiche, harte oder stark
-gepufferte Wasser sichtbar schlechter, waehrend realistisch brauchbare
-Mineralwaesser nicht unnoetig hart abgestraft werden.
+passenden Bereich fuer Filterkaffee. Das ist als enges Ideal aus Kaffeemacher
+vertretbar, aber im Vergleich zu SCA/Water for Coffee zu streng. Mit den zwei
+Zonen bleibt dieser Bereich als Kern sichtbar, waehrend `2-7 dGH` und `1-4 d
+Alk` als erweiterter Bereich realistisch brauchbare Mineralwaesser nicht
+unnoetig hart abstraft.
 
 Die zusaetzlich geprueften Quellen vom 2026-04-30 bestaetigen diese Richtung:
 Vector und 19grams stuetzen die breitere SCA-Spanne, Earlybird stuetzt die enge

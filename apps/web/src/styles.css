@@ -341,8 +341,16 @@ h3 span {
 
 .filter-range,
 .espresso-range {
-  fill-opacity: 0.28;
   stroke-width: 2.5;
+}
+
+.range-core {
+  fill-opacity: 0.36;
+}
+
+.range-extended {
+  fill-opacity: 0.14;
+  stroke-dasharray: 7 5;
 }
 
 .filter-range {
@@ -400,6 +408,16 @@ figcaption {
 
 .legend-espresso::before {
   background: var(--espresso);
+}
+
+.legend-core::before {
+  border: 2px solid var(--text-muted);
+  background: var(--surface);
+}
+
+.legend-extended::before {
+  border: 2px dashed var(--text-muted);
+  background: var(--surface);
 }
 
 .legend-current::before {

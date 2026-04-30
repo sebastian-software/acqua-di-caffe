@@ -22,7 +22,14 @@ export type TargetRange = {
   };
 };
 
+export type TargetZones = {
+  core: TargetRange;
+  extended: TargetRange;
+};
+
 export type SingleCoffeeTarget = Exclude<CoffeeTarget, "all">;
+
+export type WaterTargetZone = "core" | "extended" | "outside";
 
 export type WaterGradeLabel =
   | "sehr gut"
@@ -34,11 +41,13 @@ export type WaterGradeLabel =
 
 export type WaterTargetEvaluation = {
   target: SingleCoffeeTarget;
+  zone: WaterTargetZone;
   grade: number;
   roundedGrade: number;
   label: WaterGradeLabel;
   distance: number;
   inIdealRange: boolean;
+  inExtendedRange: boolean;
 };
 
 export type WaterClassification = {
@@ -48,15 +57,32 @@ export type WaterClassification = {
   score: number;
 };
 
-export const TARGET_RANGES: Record<SingleCoffeeTarget, TargetRange> = {
+export const TARGET_ZONES: Record<SingleCoffeeTarget, TargetZones> = {
   filter: {
-    totalHardness: { min: 2, max: 7 },
-    alkalinity: { min: 1, max: 4 },
+    core: {
+      totalHardness: { min: 2, max: 3 },
+      alkalinity: { min: 1, max: 2 },
+    },
+    extended: {
+      totalHardness: { min: 2, max: 7 },
+      alkalinity: { min: 1, max: 4 },
+    },
   },
   espresso: {
-    totalHardness: { min: 3, max: 7 },
-    alkalinity: { min: 2, max: 4 },
+    core: {
+      totalHardness: { min: 3, max: 6 },
+      alkalinity: { min: 2, max: 4 },
+    },
+    extended: {
+      totalHardness: { min: 3, max: 7 },
+      alkalinity: { min: 2, max: 4 },
+    },
   },
+};
+
+export const TARGET_RANGES: Record<SingleCoffeeTarget, TargetRange> = {
+  filter: TARGET_ZONES.filter.extended,
+  espresso: TARGET_ZONES.espresso.extended,
 };
 
 const CALCIUM_TO_DH = 7.1;
@@ -102,24 +128,27 @@ export function evaluateWaterProfile(
   target: SingleCoffeeTarget,
 ): WaterTargetEvaluation {
   validateProfile(profile);
-  const distance = distanceToRange(profile, target);
-  const normalizedDistance = normalizedDistanceToRange(profile, target);
-  const grade = clamp(1 + normalizedDistance * 2, 1, 6);
-  const roundedGrade = distance === 0 ? 1 : Math.max(2, Math.round(grade));
+  const coreDistance = distanceToRange(profile, target, "core");
+  const extendedDistance = distanceToRange(profile, target, "extended");
+  const zone = getTargetZone(coreDistance, extendedDistance);
+  const grade = gradeForZone(profile, target, zone);
+  const roundedGrade = zone === "core" ? 1 : Math.max(2, Math.round(grade));
 
   return {
     target,
+    zone,
     grade,
     roundedGrade,
     label: labelForGrade(roundedGrade),
-    distance,
-    inIdealRange: distance === 0,
+    distance: zone === "outside" ? extendedDistance : coreDistance,
+    inIdealRange: zone === "core",
+    inExtendedRange: zone === "core" || zone === "extended",
   };
 }
 
 export function isInTargetRange(profile: WaterHardness, target: SingleCoffeeTarget): boolean {
   validateProfile(profile);
-  return distanceToRange(profile, target) === 0;
+  return distanceToRange(profile, target, "extended") === 0;
 }
 
 export function getTargetKeys(target: CoffeeTarget): SingleCoffeeTarget[] {
@@ -130,22 +159,60 @@ export function getTargetKeys(target: CoffeeTarget): SingleCoffeeTarget[] {
   return [target];
 }
 
-function distanceToRange(profile: WaterHardness, target: SingleCoffeeTarget): number {
-  const range = TARGET_RANGES[target];
+function distanceToRange(
+  profile: WaterHardness,
+  target: SingleCoffeeTarget,
+  zone: keyof TargetZones,
+): number {
+  const range = TARGET_ZONES[target][zone];
   const hardnessDistance = axisDistance(profile.totalHardness, range.totalHardness);
   const alkalinityDistance = axisDistance(profile.alkalinity, range.alkalinity);
 
   return Math.hypot(hardnessDistance, alkalinityDistance);
 }
 
-function normalizedDistanceToRange(profile: WaterHardness, target: SingleCoffeeTarget): number {
-  const range = TARGET_RANGES[target];
+function normalizedDistanceToRange(
+  profile: WaterHardness,
+  target: SingleCoffeeTarget,
+  zone: keyof TargetZones,
+): number {
+  const range = TARGET_ZONES[target][zone];
   const hardnessDistance =
     axisDistance(profile.totalHardness, range.totalHardness) / HARDNESS_GRADE_TOLERANCE;
   const alkalinityDistance =
     axisDistance(profile.alkalinity, range.alkalinity) / ALKALINITY_GRADE_TOLERANCE;
 
   return Math.hypot(hardnessDistance, alkalinityDistance);
+}
+
+function getTargetZone(coreDistance: number, extendedDistance: number): WaterTargetZone {
+  if (coreDistance === 0) {
+    return "core";
+  }
+
+  if (extendedDistance === 0) {
+    return "extended";
+  }
+
+  return "outside";
+}
+
+function gradeForZone(
+  profile: WaterHardness,
+  target: SingleCoffeeTarget,
+  zone: WaterTargetZone,
+): number {
+  if (zone === "core") {
+    return 1;
+  }
+
+  if (zone === "extended") {
+    const normalizedCoreDistance = normalizedDistanceToRange(profile, target, "core");
+    return clamp(2 + Math.min(normalizedCoreDistance ** 2 * 0.25, 0.49), 2, 2.49);
+  }
+
+  const normalizedExtendedDistance = normalizedDistanceToRange(profile, target, "extended");
+  return clamp(2 + normalizedExtendedDistance ** 2 * 1.5, 2, 6);
 }
 
 function axisDistance(value: number, range: { min: number; max: number }): number {
