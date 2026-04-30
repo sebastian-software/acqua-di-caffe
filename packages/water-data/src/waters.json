@@ -168,6 +168,20 @@
     "lastVerified": "2026-04-30"
   },
   {
+    "id": "sodenthaler-gourmet-naturelle",
+    "name": "Gourmet Naturelle",
+    "brand": "Sodenthaler",
+    "country": "Deutschland",
+    "availableAt": ["Shopfinder", "Online-Lieferdienst", "Getränkemarkt"],
+    "calciumMgL": 76,
+    "magnesiumMgL": 26,
+    "bicarbonateMgL": 244,
+    "sourceType": "manufacturer",
+    "sourceLabel": "Herstellerangabe, Produktseite mit Nährwertangaben pro Liter",
+    "sourceUrl": "https://sodenthaler.de/gourmet/",
+    "lastVerified": "2026-04-30"
+  },
+  {
     "id": "aquanur-still",
     "name": "Still",
     "brand": "Aquanur",
