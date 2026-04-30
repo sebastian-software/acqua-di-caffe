@@ -332,8 +332,7 @@ h3 span {
 }
 
 .axis-tick,
-.axis-label,
-.range-label {
+.axis-label {
   fill: var(--text-muted);
   font-size: 14px;
   font-weight: 700;
@@ -402,26 +401,40 @@ figcaption {
   content: "";
 }
 
-.legend-filter::before {
-  background: var(--filter);
-}
-
-.legend-espresso::before {
-  background: var(--espresso);
-}
-
-.legend-core::before {
-  border: 2px solid var(--text-muted);
-  background: var(--surface);
-}
-
-.legend-extended::before {
-  border: 2px dashed var(--text-muted);
-  background: var(--surface);
-}
-
 .legend-current::before {
   background: oklch(41% 0.14 225);
+}
+
+.legend-filter-core::before {
+  border: 2px solid var(--filter);
+  background: var(--filter-soft);
+}
+
+.legend-filter-extended::before {
+  border: 2px dashed var(--filter);
+  background: var(--filter-soft);
+}
+
+.legend-espresso-core::before {
+  border: 2px solid var(--espresso);
+  background: var(--espresso-soft);
+}
+
+.legend-espresso-extended::before {
+  border: 2px dashed var(--espresso);
+  background: var(--espresso-soft);
+}
+
+.legend-point-good::before {
+  background: var(--good);
+}
+
+.legend-point-solid::before {
+  background: var(--near);
+}
+
+.legend-point-avoid::before {
+  background: var(--bad);
 }
 
 .chart-note {
@@ -442,7 +455,7 @@ figcaption {
 
 .catalog-controls {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(140px, 0.48fr);
+  grid-template-columns: minmax(190px, 1fr) minmax(140px, 0.42fr) minmax(150px, 0.42fr);
   gap: 12px;
 }
 
@@ -461,6 +474,70 @@ figcaption {
 
 .search-field input {
   padding: 10px 12px 10px 40px;
+}
+
+.catalog-chart {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--surface), var(--surface-muted) 36%);
+}
+
+.compact-heading {
+  margin-bottom: 12px;
+}
+
+.catalog-chart-wrap {
+  margin: 0;
+}
+
+.catalog-chart-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.catalog-point-group {
+  cursor: pointer;
+}
+
+.catalog-point {
+  stroke: var(--surface);
+  stroke-width: 2.5;
+  transition:
+    r 160ms ease,
+    stroke-width 160ms ease;
+}
+
+.catalog-point-group:hover .catalog-point,
+.catalog-point-group:focus-visible .catalog-point {
+  stroke: var(--text);
+  stroke-width: 4;
+}
+
+.catalog-point-group.is-selected .catalog-point {
+  stroke: oklch(41% 0.14 225);
+  stroke-width: 5;
+}
+
+.point-grade-1,
+.point-grade-2 {
+  fill: var(--good);
+}
+
+.point-grade-3,
+.point-grade-4 {
+  fill: var(--near);
+}
+
+.point-grade-5,
+.point-grade-6 {
+  fill: var(--bad);
+}
+
+.catalog-point.is-clamped {
+  stroke-dasharray: 3 2;
 }
 
 .water-list {

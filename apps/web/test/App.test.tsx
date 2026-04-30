@@ -15,9 +15,18 @@ describe("App", () => {
     await user.clear(screen.getByLabelText(/Hydrogencarbonat/i));
     await user.type(screen.getByLabelText(/Hydrogencarbonat/i), "74");
 
-    const resultSection = screen.getByRole("region", { name: /Ergebnis/i });
+    const resultSection = screen.getByRole("region", { name: /Aktuelles Profil/i });
     expect(within(resultSection).getByText("3,53")).toBeInTheDocument();
     expect(within(resultSection).getByText("3,39")).toBeInTheDocument();
+  });
+
+  it("starts with an empty manual profile", () => {
+    render(<App />);
+
+    const resultSection = screen.getByRole("region", { name: /Aktuelles Profil/i });
+    expect(within(resultSection).getByText(/Wähle ein Wasser/i)).toBeInTheDocument();
+    expect(within(resultSection).getAllByText("–")).toHaveLength(2);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("filters the water catalog by search text", async () => {
@@ -27,6 +36,9 @@ describe("App", () => {
     await user.type(screen.getByRole("searchbox", { name: /Wasser suchen/i }), "Black Forest");
 
     const catalog = screen.getByRole("region", { name: /Mineralwasser-Datenbank/i });
+    expect(
+      within(catalog).getByRole("heading", { name: /Mineralwasser im Vergleich/i }),
+    ).toBeInTheDocument();
     expect(within(catalog).getByRole("heading", { name: /Black Forest/i })).toBeInTheDocument();
     expect(
       within(catalog).queryByRole("heading", { name: /Gerolsteiner/i }),
