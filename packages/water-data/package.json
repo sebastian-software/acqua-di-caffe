@@ -1,5 +1,5 @@
 {
-  "name": "@coffeewater/water-data",
+  "name": "@acqua-di-caffe/water-data",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -17,7 +17,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@coffeewater/core": "workspace:*"
+    "@acqua-di-caffe/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

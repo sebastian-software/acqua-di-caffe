@@ -1,12 +1,12 @@
 {
-  "name": "coffeewater",
+  "name": "acqua-di-caffe",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "build": "pnpm -r --sort build",
-    "dev": "pnpm --filter @coffeewater/web dev",
+    "dev": "pnpm --filter @acqua-di-caffe/web dev",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "test:run": "pnpm -r test:run",

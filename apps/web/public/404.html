@@ -2,10 +2,10 @@
 <html lang="de">
   <head>
     <meta charset="utf-8" />
-    <title>Kaffeewasser Rechner</title>
+    <title>Acqua di Caffè</title>
     <script>
       (function () {
-        var basePath = "/coffeewater";
+        var basePath = "/acqua-di-caffe";
         var pathname = window.location.pathname;
         var route = pathname.indexOf(basePath) === 0 ? pathname.slice(basePath.length) : pathname;
 
@@ -14,7 +14,7 @@
         }
 
         window.sessionStorage.setItem(
-          "coffeewater:redirect",
+          "acqua-di-caffe:redirect",
           route + window.location.search + window.location.hash,
         );
         window.location.replace(basePath + "/");

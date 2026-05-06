@@ -2,7 +2,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  base: process.env.GITHUB_PAGES === "true" ? "/coffeewater/" : "/",
+  base: process.env.GITHUB_PAGES === "true" ? "/acqua-di-caffe/" : "/",
   plugins: [react()],
   test: {
     environment: "jsdom",

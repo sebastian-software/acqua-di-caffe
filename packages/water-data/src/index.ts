@@ -5,7 +5,7 @@ import {
   type CoffeeTarget,
   type WaterClassification,
   type WaterHardness,
-} from "@coffeewater/core";
+} from "@acqua-di-caffe/core";
 import watersJson from "./waters.json";
 
 export type MineralWater = {

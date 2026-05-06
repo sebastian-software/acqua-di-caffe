@@ -64,10 +64,10 @@ importers:
 
   apps/web:
     dependencies:
-      "@coffeewater/core":
+      "@acqua-di-caffe/core":
         specifier: workspace:*
         version: link:../../packages/core
-      "@coffeewater/water-data":
+      "@acqua-di-caffe/water-data":
         specifier: workspace:*
         version: link:../../packages/water-data
       lucide-react:
@@ -122,7 +122,7 @@ importers:
 
   packages/water-data:
     dependencies:
-      "@coffeewater/core":
+      "@acqua-di-caffe/core":
         specifier: workspace:*
         version: link:../core
     devDependencies:

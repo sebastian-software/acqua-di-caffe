@@ -8,13 +8,13 @@ import {
   type WaterClassification,
   type WaterHardness,
   type WaterTargetEvaluation,
-} from "@coffeewater/core";
+} from "@acqua-di-caffe/core";
 import {
   getWatersForTarget,
   waters,
   type EnrichedMineralWater,
   type MineralWater,
-} from "@coffeewater/water-data";
+} from "@acqua-di-caffe/water-data";
 import {
   BookOpen,
   Calculator,
@@ -110,7 +110,7 @@ const routeItems = [
   { label: "Über das Projekt", path: "/projekt", icon: Info },
 ] as const;
 
-const githubPagesRedirectKey = "coffeewater:redirect";
+const githubPagesRedirectKey = "acqua-di-caffe:redirect";
 const routePaths = new Set<AppRoute>(["/", "/datenbank", "/wissen", "/projekt"]);
 
 export function App() {
@@ -235,14 +235,14 @@ export function App() {
         <a
           className="brand-mark"
           href={buildRouteHref("/")}
-          aria-label="Kaffeewasser Rechner"
+          aria-label="Acqua di Caffè"
           onClick={(event) => handleRouteClick(event, "/")}
         >
           <span className="brand-icon" aria-hidden="true">
             <Droplet size={26} />
             <Coffee size={18} />
           </span>
-          <span>Kaffeewasser Rechner</span>
+          <span>Acqua di Caffè</span>
         </a>
 
         <nav className="topnav" aria-label="Bereiche">
@@ -274,7 +274,7 @@ export function App() {
         </div>
       </header>
 
-      <h1 className="sr-only">Kaffeewasser Rechner</h1>
+      <h1 className="sr-only">Acqua di Caffè</h1>
 
       {route === "/" ? (
         <div className="app-layout">

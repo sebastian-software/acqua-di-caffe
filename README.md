@@ -1,4 +1,4 @@
-# Coffeewater
+# Acqua di Caffè
 
 Kleine React-App zur Berechnung von Kaffeewasser aus Mineralwasser-Etiketten.
 
@@ -44,4 +44,4 @@ pnpm build
 
 ## GitHub Pages
 
-Der Workflow unter `.github/workflows/pages.yml` installiert mit `pnpm`, führt Tests aus, baut `apps/web` und deployed `apps/web/dist` nach GitHub Pages. Für den Pages-Build setzt Vite den Base-Pfad auf `/coffeewater/`.
+Der Workflow unter `.github/workflows/pages.yml` installiert mit `pnpm`, führt Tests aus, baut `apps/web` und deployed `apps/web/dist` nach GitHub Pages. Für den Pages-Build setzt Vite den Base-Pfad auf `/acqua-di-caffe/`.

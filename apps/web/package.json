@@ -1,5 +1,5 @@
 {
-  "name": "@coffeewater/web",
+  "name": "@acqua-di-caffe/web",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -12,8 +12,8 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@coffeewater/core": "workspace:*",
-    "@coffeewater/water-data": "workspace:*",
+    "@acqua-di-caffe/core": "workspace:*",
+    "@acqua-di-caffe/water-data": "workspace:*",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
