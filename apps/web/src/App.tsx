@@ -279,6 +279,15 @@ export function App() {
       {route === "/" ? (
         <div className="app-layout">
           <aside className="analysis-rail" aria-label="Analyse">
+            <section className="panel source-note" aria-labelledby="source-note-heading">
+              <p className="source-note-kicker">Fonte editoriale</p>
+              <h2 id="source-note-heading">Wasser ist der stillste Träger des Geschmacks.</h2>
+              <p>
+                Mineralität, Herkunft und Pufferung werden gemeinsam lesbar, damit Filter und
+                Espresso nicht nur korrekt, sondern bewusst ausgewählt werden.
+              </p>
+            </section>
+
             <section className="panel analysis-panel" aria-labelledby="analysis-heading">
               <PanelTitle
                 icon={Droplet}
@@ -337,6 +346,14 @@ export function App() {
           </aside>
 
           <section className="dashboard" aria-label="Wasservergleich">
+            <FontePanel
+              selectedWater={selectedWater}
+              selectedEnrichedWater={selectedEnrichedWater}
+              currentProfile={currentProfile}
+              currentClassification={currentClassification}
+              target={target}
+            />
+
             <ChartPanel
               waters={visibleWaters}
               target={target}
@@ -466,6 +483,112 @@ export function App() {
         </section>
       ) : null}
     </main>
+  );
+}
+
+function FontePanel({
+  selectedWater,
+  selectedEnrichedWater,
+  currentProfile,
+  currentClassification,
+  target,
+}: {
+  selectedWater: MineralWater | null;
+  selectedEnrichedWater: EnrichedMineralWater | null;
+  currentProfile: WaterHardness | null;
+  currentClassification: WaterClassification | null;
+  target: CoffeeTarget;
+}) {
+  const mineralRows = selectedWater
+    ? [
+        ["Calcium (Ca²⁺)", selectedWater.calciumMgL],
+        ["Magnesium (Mg²⁺)", selectedWater.magnesiumMgL],
+        ["Hydrogencarbonat (HCO₃⁻)", selectedWater.bicarbonateMgL],
+      ]
+    : [];
+  const bestEvaluation =
+    target === "all"
+      ? currentClassification?.best
+      : currentClassification?.evaluations[target as SingleCoffeeTarget];
+
+  return (
+    <section className="panel fonte-panel" aria-labelledby="fonte-heading">
+      <div className="fonte-hero">
+        <div>
+          <p className="page-kicker">Mineralwasser</p>
+          <h2 id="fonte-heading">
+            {selectedWater ? `${selectedWater.brand} ${selectedWater.name}` : "Manuelle Analyse"}
+          </h2>
+          <p>
+            {selectedWater
+              ? `${selectedWater.country} · ${selectedWater.sourceLabel}`
+              : "Etikettenwerte eingeben und das Wasser gegen die Zielbereiche prüfen."}
+          </p>
+          <div className="source-meta">
+            <span>
+              <MapPin aria-hidden="true" size={15} />
+              {selectedWater?.country ?? "Eigene Quelle"}
+            </span>
+            <span>
+              <Store aria-hidden="true" size={15} />
+              {selectedWater?.availableAt.slice(0, 2).join(", ") ?? "Manuell"}
+            </span>
+          </div>
+        </div>
+
+        <div className="source-map" aria-hidden="true">
+          <span className="map-pin" />
+          <span className="map-label">{selectedWater?.country ?? "Analyse"}</span>
+        </div>
+      </div>
+
+      <div className="fonte-body">
+        <div className="water-analysis">
+          <p className="section-label">Wasseranalyse pro Liter</p>
+          <div className="fonte-metrics">
+            <Metric label="Gesamthärte" value={currentProfile?.totalHardness} unit="°d GH" />
+            <Metric label="Alkalinität" value={currentProfile?.alkalinity} unit="°d Alk" />
+          </div>
+          {bestEvaluation ? (
+            <div className="taste-score">
+              <strong>Eignung – {target === "all" ? targetLabels.all : targetLabels[target]}</strong>
+              <span>{formatEvaluationDetail(bestEvaluation)}</span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mineral-ledger" aria-label="Mineralwerte">
+          <p className="section-label">Mineralien</p>
+          {mineralRows.length > 0 ? (
+            mineralRows.map(([label, value]) => (
+              <div key={label}>
+                <span>{label}</span>
+                <strong>{value} mg/L</strong>
+              </div>
+            ))
+          ) : (
+            <p>Wähle ein Wasser oder vervollständige die Analyse.</p>
+          )}
+          {selectedWater ? (
+            <a href={selectedWater.sourceUrl} target="_blank" rel="noreferrer">
+              Quelle prüfen
+              <ExternalLink aria-hidden="true" size={14} />
+            </a>
+          ) : null}
+        </div>
+      </div>
+
+      {selectedEnrichedWater ? (
+        <div className="fonte-comparison" aria-label="Schnellvergleich">
+          {(["filter", "espresso"] as const).map((targetKey) => (
+            <div key={targetKey}>
+              <span>{targetLabels[targetKey]}</span>
+              <GradePill evaluation={selectedEnrichedWater.classification.evaluations[targetKey]} />
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
