@@ -5,6 +5,7 @@ import {
   type CoffeeTarget,
   type SingleCoffeeTarget,
   type TargetRange,
+  type WaterClassification,
   type WaterHardness,
   type WaterTargetEvaluation,
 } from "@coffeewater/core";
@@ -15,16 +16,24 @@ import {
   type MineralWater,
 } from "@coffeewater/water-data";
 import {
+  BookOpen,
   Calculator,
-  ChartScatter,
+  CheckCircle2,
+  ChevronRight,
+  Coffee,
   Database,
-  Droplets,
+  Droplet,
   ExternalLink,
-  RotateCcw,
+  FlaskConical,
+  Info,
+  MapPin,
   Search,
+  SlidersHorizontal,
+  Store,
+  SunMedium,
   Target,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 
 type MineralInput = {
   calcium: string;
@@ -33,14 +42,18 @@ type MineralInput = {
 };
 
 type GradeFilter = "any" | "top" | "solid" | "avoid";
-type AvailabilityFilter = "any" | "broad" | "regional" | "check";
+type CatalogFilter = "all" | "broad" | "regional" | "discounter" | "bio";
+type SortMode = "best" | "filter" | "espresso" | "name" | "hardness";
+type AxisScale = "coffee" | "full";
 
-const DEFAULT_WATER_ID = "volvic-naturelle";
+const DEFAULT_WATER_ID = "odenwald-quelle-gourmet-naturelle";
 const emptyInput: MineralInput = {
   calcium: "",
   magnesium: "",
   bicarbonate: "",
 };
+const defaultWater = waters.find((water) => water.id === DEFAULT_WATER_ID);
+const defaultInput = defaultWater ? toInput(defaultWater) : emptyInput;
 
 const targetLabels: Record<CoffeeTarget, string> = {
   filter: "Filterkaffee",
@@ -48,7 +61,7 @@ const targetLabels: Record<CoffeeTarget, string> = {
   all: "Beide",
 };
 
-const shortTargetLabels: Record<SingleCoffeeTarget, string> = {
+const targetShortLabels: Record<SingleCoffeeTarget, string> = {
   filter: "Filter",
   espresso: "Espresso",
 };
@@ -60,26 +73,57 @@ const gradeFilterLabels: Record<GradeFilter, string> = {
   avoid: "Note 4-6",
 };
 
-const availabilityFilterLabels: Record<AvailabilityFilter, string> = {
-  any: "Alle",
-  broad: "breiter Handel",
-  regional: "regional/Gastro",
-  check: "prüfen",
+const catalogFilterLabels: Record<CatalogFilter, string> = {
+  all: "Alle",
+  broad: "Deutschlandweit",
+  regional: "Regional",
+  discounter: "Discounter",
+  bio: "Bio",
+};
+
+const sortLabels: Record<SortMode, string> = {
+  best: "Beste Note",
+  filter: "Beste Note (Filter)",
+  espresso: "Beste Note (Espresso)",
+  name: "Name A-Z",
+  hardness: "Härte aufsteigend",
+};
+
+const axisScaleLabels: Record<AxisScale, string> = {
+  coffee: "Kaffeebereich",
+  full: "Gesamter Katalog",
 };
 
 const zoneLabels: Record<WaterTargetEvaluation["zone"], string> = {
   core: "Kernbereich",
   extended: "erweiterter Bereich",
+  usable: "Toleranzbereich",
   outside: "außerhalb",
 };
 
+type AppRoute = "/" | "/datenbank" | "/wissen" | "/projekt";
+
+const routeItems = [
+  { label: "Rechner", path: "/", icon: Calculator },
+  { label: "Wasser Datenbank", path: "/datenbank", icon: Database },
+  { label: "Quellen & Wissen", path: "/wissen", icon: BookOpen },
+  { label: "Über das Projekt", path: "/projekt", icon: Info },
+] as const;
+
+const githubPagesRedirectKey = "coffeewater:redirect";
+const routePaths = new Set<AppRoute>(["/", "/datenbank", "/wissen", "/projekt"]);
+
 export function App() {
-  const [target, setTarget] = useState<CoffeeTarget>("all");
-  const [selectedWaterId, setSelectedWaterId] = useState<string>("manual");
-  const [input, setInput] = useState<MineralInput>(emptyInput);
+  const [route, setRoute] = useState<AppRoute>(() => readInitialRoute());
+  const [target, setTarget] = useState<CoffeeTarget>("filter");
+  const [selectedWaterId, setSelectedWaterId] = useState<string>(DEFAULT_WATER_ID);
+  const [input, setInput] = useState<MineralInput>(defaultInput);
   const [query, setQuery] = useState("");
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>("any");
-  const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>("any");
+  const [catalogFilter, setCatalogFilter] = useState<CatalogFilter>("all");
+  const [sortMode, setSortMode] = useState<SortMode>("best");
+  const [axisScale, setAxisScale] = useState<AxisScale>("coffee");
+  const [showLegend, setShowLegend] = useState(true);
 
   const hasMineralInput = Object.values(input).some((value) => value.trim() !== "");
   const parsedInput = useMemo(() => parseMineralInput(input), [input]);
@@ -99,28 +143,43 @@ export function App() {
   }, [currentProfile]);
 
   const enrichedWaters = useMemo(() => getWatersForTarget(target), [target]);
-  const visibleWaters = useMemo(
-    () =>
-      enrichedWaters.filter((water) => {
-        const haystack = `${water.brand} ${water.name} ${water.country} ${water.availableAt.join(
-          " ",
-        )}`.toLowerCase();
-        const matchesQuery = haystack.includes(query.trim().toLowerCase());
-        const bestGrade = water.classification.best.roundedGrade;
-        const matchesGrade =
-          gradeFilter === "any" ||
-          (gradeFilter === "top" && bestGrade <= 2) ||
-          (gradeFilter === "solid" && bestGrade <= 3) ||
-          (gradeFilter === "avoid" && bestGrade >= 4);
-        const matchesAvailability = waterMatchesAvailability(water, availabilityFilter);
+  const visibleWaters = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
 
-        return matchesQuery && matchesGrade && matchesAvailability;
-      }),
-    [availabilityFilter, enrichedWaters, gradeFilter, query],
-  );
+    const filtered = enrichedWaters.filter((water) => {
+      const haystack = `${water.brand} ${water.name} ${water.country} ${water.availableAt.join(
+        " ",
+      )} ${water.sourceLabel}`.toLowerCase();
+      const matchesQuery = haystack.includes(normalizedQuery);
+      const bestGrade = water.classification.best.roundedGrade;
+      const matchesGrade =
+        gradeFilter === "any" ||
+        (gradeFilter === "top" && bestGrade <= 2) ||
+        (gradeFilter === "solid" && bestGrade <= 3) ||
+        (gradeFilter === "avoid" && bestGrade >= 4);
+      const matchesAvailability = waterMatchesCatalogFilter(water, catalogFilter);
+
+      return matchesQuery && matchesGrade && matchesAvailability;
+    });
+
+    return [...filtered].sort((a, b) => compareWaters(a, b, sortMode));
+  }, [catalogFilter, enrichedWaters, gradeFilter, query, sortMode]);
 
   const selectedWater =
-    selectedWaterId === "manual" ? null : waters.find((water) => water.id === selectedWaterId);
+    selectedWaterId === "manual"
+      ? null
+      : (waters.find((water) => water.id === selectedWaterId) ?? null);
+  const selectedEnrichedWater =
+    selectedWaterId === "manual"
+      ? null
+      : (enrichedWaters.find((water) => water.id === selectedWaterId) ?? null);
+
+  useEffect(() => {
+    const handlePopState = () => setRoute(normalizeRoutePath(window.location.pathname));
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   function updateInput(field: keyof MineralInput, value: string) {
     setSelectedWaterId("manual");
@@ -143,192 +202,661 @@ export function App() {
     setInput(toInput(water));
   }
 
+  function submitManualAnalysis() {
+    if (parsedInput) {
+      setSelectedWaterId("manual");
+    }
+  }
+
+  function navigateTo(nextRoute: AppRoute) {
+    if (nextRoute !== route) {
+      window.history.pushState(null, "", buildRouteHref(nextRoute));
+      setRoute(nextRoute);
+      try {
+        window.scrollTo({ top: 0 });
+      } catch {
+        // jsdom does not implement scrollTo; browser navigation should still scroll.
+      }
+    }
+  }
+
+  function handleRouteClick(event: MouseEvent<HTMLAnchorElement>, nextRoute: AppRoute) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    event.preventDefault();
+    navigateTo(nextRoute);
+  }
+
   return (
     <main className="app-shell">
-      <section className="workspace" aria-labelledby="page-title">
-        <div className="intro">
-          <p className="eyebrow">Kaffeewasser</p>
-          <h1 id="page-title">Rechner für stille Mineralwasser</h1>
-          <p>
-            Calcium, Magnesium und Hydrogencarbonat reichen aus, um Gesamthärte und Alkalinität
-            einzuordnen. Die Noten sind bewusst toleranter als eine harte Ja-Nein-Bewertung.
-          </p>
-        </div>
+      <header className="topbar" aria-label="Hauptnavigation">
+        <a
+          className="brand-mark"
+          href={buildRouteHref("/")}
+          aria-label="Kaffeewasser Rechner"
+          onClick={(event) => handleRouteClick(event, "/")}
+        >
+          <span className="brand-icon" aria-hidden="true">
+            <Droplet size={26} />
+            <Coffee size={18} />
+          </span>
+          <span>Kaffeewasser Rechner</span>
+        </a>
 
-        <div className="target-switch" aria-label="Zielbereich">
-          {(Object.keys(targetLabels) as CoffeeTarget[]).map((targetKey) => (
-            <button
-              key={targetKey}
-              type="button"
-              className={target === targetKey ? "is-active" : ""}
-              aria-pressed={target === targetKey}
-              onClick={() => setTarget(targetKey)}
+        <nav className="topnav" aria-label="Bereiche">
+          {routeItems.map(({ label, path, icon: Icon }) => (
+            <a
+              key={path}
+              className={route === path ? "is-active" : ""}
+              href={buildRouteHref(path)}
+              aria-current={route === path ? "page" : undefined}
+              onClick={(event) => handleRouteClick(event, path)}
             >
-              <Target aria-hidden="true" size={18} />
-              Sortierung: {targetLabels[targetKey]}
-            </button>
+              <Icon aria-hidden="true" size={18} />
+              {label}
+            </a>
           ))}
+        </nav>
+
+        <div className="topbar-actions" aria-label="Anzeige">
+          <button type="button" aria-label="Light Mode">
+            <SunMedium aria-hidden="true" size={18} />
+          </button>
+          <a
+            href={buildRouteHref("/projekt")}
+            onClick={(event) => handleRouteClick(event, "/projekt")}
+          >
+            <Info aria-hidden="true" size={18} />
+            Info
+          </a>
         </div>
+      </header>
 
-        <div className="tool-grid">
-          <section className="panel input-panel" aria-labelledby="input-heading">
-            <div className="section-heading">
-              <Calculator aria-hidden="true" size={22} />
-              <div>
-                <h2 id="input-heading">Mineralwerte</h2>
-                <p>Angaben vom Etikett in mg pro Liter.</p>
-              </div>
-            </div>
+      <h1 className="sr-only">Kaffeewasser Rechner</h1>
 
-            <label className="field">
-              <span>Wasser auswählen</span>
-              <select value={selectedWaterId} onChange={(event) => selectWater(event.target.value)}>
-                <option value="manual">Manuelle Eingabe</option>
-                {waters.map((water) => (
-                  <option key={water.id} value={water.id}>
-                    {water.brand} {water.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="field-grid">
-              <NumberField
-                id="calcium"
-                label="Calcium"
-                value={input.calcium}
-                onChange={(value) => updateInput("calcium", value)}
+      {route === "/" ? (
+        <div className="app-layout">
+          <aside className="analysis-rail" aria-label="Analyse">
+            <section className="panel analysis-panel" aria-labelledby="analysis-heading">
+              <PanelTitle
+                icon={Droplet}
+                title="Manuelle Analyse"
+                description="Gib die wichtigsten Werte deiner Wasseranalyse ein."
+                id="analysis-heading"
               />
-              <NumberField
-                id="magnesium"
-                label="Magnesium"
-                value={input.magnesium}
-                onChange={(value) => updateInput("magnesium", value)}
-              />
-              <NumberField
-                id="bicarbonate"
-                label="Hydrogencarbonat"
-                value={input.bicarbonate}
-                onChange={(value) => updateInput("bicarbonate", value)}
-              />
-            </div>
 
-            {hasMineralInput && !parsedInput ? (
-              <p className="form-error" role="alert">
-                Bitte trage für alle drei Werte Zahlen ab 0 ein.
-              </p>
-            ) : null}
-
-            <button
-              className="secondary-action"
-              type="button"
-              onClick={() => selectWater(DEFAULT_WATER_ID)}
-            >
-              <RotateCcw aria-hidden="true" size={18} />
-              Volvic als Beispiel einsetzen
-            </button>
-          </section>
-
-          <section className="panel result-panel" aria-labelledby="result-heading">
-            <div className="section-heading">
-              <Droplets aria-hidden="true" size={22} />
-              <div>
-                <h2 id="result-heading">Aktuelles Profil</h2>
-                <p>
-                  {selectedWater
-                    ? `${selectedWater.brand} ${selectedWater.name}`
-                    : "Wähle ein Wasser oder trage Mineralwerte ein."}
-                </p>
-              </div>
-            </div>
-
-            <div className="metric-grid" aria-live="polite">
-              <Metric label="Gesamthärte" value={currentProfile?.totalHardness} unit="°d GH" />
-              <Metric label="Alkalinität" value={currentProfile?.alkalinity} unit="°d Alk" />
-            </div>
-            {currentClassification ? (
-              <div className="grade-summary" aria-label="Bewertung">
-                <GradeBadge evaluation={currentClassification.evaluations.filter} />
-                <GradeBadge evaluation={currentClassification.evaluations.espresso} />
-              </div>
-            ) : null}
-
-            <WaterChart profile={currentProfile} target={target} />
-          </section>
-        </div>
-
-        <section className="catalog" aria-labelledby="catalog-heading">
-          <div className="catalog-head">
-            <div className="section-heading">
-              <Database aria-hidden="true" size={22} />
-              <div>
-                <h2 id="catalog-heading">Mineralwasser-Datenbank</h2>
-                <p>
-                  {visibleWaters.length} quellengeprüfte Einträge. Jede Karte zeigt Filter- und
-                  Espresso-Note.
-                </p>
-              </div>
-            </div>
-
-            <div className="catalog-controls">
-              <label className="search-field">
-                <Search aria-hidden="true" size={18} />
-                <span className="sr-only">Wasser suchen</span>
-                <input
-                  type="search"
-                  placeholder="Marke, Händler, Land"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+              <div className="field-stack">
+                <NumberField
+                  id="calcium"
+                  label="Calcium (Ca²⁺)"
+                  value={input.calcium}
+                  onChange={(value) => updateInput("calcium", value)}
                 />
-              </label>
+                <NumberField
+                  id="magnesium"
+                  label="Magnesium (Mg²⁺)"
+                  value={input.magnesium}
+                  onChange={(value) => updateInput("magnesium", value)}
+                />
+                <NumberField
+                  id="bicarbonate"
+                  label="Hydrogencarbonat (HCO₃⁻)"
+                  value={input.bicarbonate}
+                  onChange={(value) => updateInput("bicarbonate", value)}
+                />
+              </div>
 
-              <label className="status-field">
-                <span>Notenfilter</span>
-                <select
-                  value={gradeFilter}
-                  onChange={(event) => setGradeFilter(event.target.value as GradeFilter)}
-                >
-                  {Object.entries(gradeFilterLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="control-group">
+                <span className="control-label">Zielbereich</span>
+                <p>Wähle den gewünschten Brühstil.</p>
+                <TargetSwitch target={target} setTarget={setTarget} />
+              </div>
 
-              <label className="status-field">
-                <span>Verfügbarkeit</span>
-                <select
-                  value={availabilityFilter}
-                  onChange={(event) =>
-                    setAvailabilityFilter(event.target.value as AvailabilityFilter)
-                  }
-                >
-                  {Object.entries(availabilityFilterLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+              {hasMineralInput && !parsedInput ? (
+                <p className="form-error" role="alert">
+                  Bitte trage für alle drei Werte Zahlen ab 0 ein.
+                </p>
+              ) : null}
+
+              <button className="primary-action" type="button" onClick={submitManualAnalysis}>
+                Analyse berechnen
+                <Calculator aria-hidden="true" size={18} />
+              </button>
+            </section>
+
+            <CurrentWaterPanel
+              selectedWater={selectedWater}
+              parsedInput={parsedInput}
+              currentProfile={currentProfile}
+              currentClassification={currentClassification}
+            />
+
+            <p className="formula-note">Formeln: GH = Ca/7,1 + Mg/4,35 · Alk = HCO₃/21,8</p>
+          </aside>
+
+          <section className="dashboard" aria-label="Wasservergleich">
+            <ChartPanel
+              waters={visibleWaters}
+              target={target}
+              selectedWater={selectedEnrichedWater}
+              onSelect={selectWater}
+              axisScale={axisScale}
+              setAxisScale={setAxisScale}
+              showLegend={showLegend}
+              onToggleLegend={() => setShowLegend((current) => !current)}
+            />
+          </section>
+        </div>
+      ) : null}
+
+      {route === "/datenbank" ? (
+        <section className="page-shell" aria-labelledby="database-page-heading">
+          <div className="page-intro">
+            <p className="page-kicker">Datenbank</p>
+            <h2 id="database-page-heading">Mineralwasser vergleichen</h2>
+            <p>
+              Suche, filtere und sortiere die geprüften stillen Mineralwasser. Ein Wasser kann hier
+              ausgewählt werden und erscheint danach wieder im Rechner.
+            </p>
           </div>
 
-          <CatalogChart
-            waters={visibleWaters}
-            target={target}
+          <DatabasePanel
+            visibleWaters={visibleWaters}
             selectedWaterId={selectedWaterId}
             onSelect={selectWater}
+            target={target}
+            setTarget={setTarget}
+            query={query}
+            setQuery={setQuery}
+            gradeFilter={gradeFilter}
+            setGradeFilter={setGradeFilter}
+            sortMode={sortMode}
+            setSortMode={setSortMode}
+            catalogFilter={catalogFilter}
+            setCatalogFilter={setCatalogFilter}
           />
+        </section>
+      ) : null}
 
-          <div className="water-list">
-            {visibleWaters.map((water) => (
-              <WaterCard key={water.id} water={water} onSelect={() => selectWater(water.id)} />
+      {route === "/wissen" ? (
+        <section className="page-shell" aria-labelledby="knowledge-page-heading">
+          <div className="page-intro">
+            <p className="page-kicker">Quellen & Wissen</p>
+            <h2 id="knowledge-page-heading">Was der Rechner wirklich berechnet</h2>
+            <p>
+              Die Formeln sind Einheitenumrechnungen aus der Wasserchemie. Die eigentliche
+              Produktentscheidung entsteht erst durch Zielbereiche und Bewertung.
+            </p>
+          </div>
+
+          <section className="support-grid route-support" aria-label="Wasserwissen">
+            <KnowledgePanel />
+            <section className="panel info-panel" aria-labelledby="targets-heading">
+              <PanelTitle
+                icon={Target}
+                title="Zielbereiche"
+                description="Kernbereiche bleiben streng, die erweiterten Bereiche und Note-3-Toleranzen bilden den Quellenkonsens praxisnäher ab."
+                id="targets-heading"
+              />
+
+              <div className="info-list">
+                <div>
+                  <strong>Filterkaffee</strong>
+                  <p>
+                    Weiches Wasser bleibt der Kern. SCA-nahe Quellen lassen aber mehr Härte und
+                    Alkalinität zu als die strengsten Specialty-Empfehlungen.
+                  </p>
+                  <code>Kern: GH 2-3 · Alk 1-2</code>
+                  <code>Erweitert: GH 1,5-8 · Alk 0,8-4,5</code>
+                </div>
+                <div>
+                  <strong>Espresso</strong>
+                  <p>
+                    Espresso hat praxisnah höhere Toleranzen, besonders bei der Alkalinität. Mehr
+                    ist trotzdem nicht automatisch besser.
+                  </p>
+                  <code>Kern: GH 3-6 · Alk 2-4</code>
+                  <code>Erweitert: GH 2-7,5 · Alk 1,5-4,8</code>
+                </div>
+              </div>
+            </section>
+          </section>
+        </section>
+      ) : null}
+
+      {route === "/projekt" ? (
+        <section className="page-shell" aria-labelledby="project-page-heading">
+          <div className="page-intro">
+            <p className="page-kicker">Projekt</p>
+            <h2 id="project-page-heading">Statische App, prüfbare Daten</h2>
+            <p>
+              Die Anwendung ist bewusst klein gehalten: lokale JSON-Daten, reine
+              TypeScript-Berechnung und Deployment als statische GitHub-Pages-App.
+            </p>
+          </div>
+
+          <section className="support-grid route-support" aria-label="Projektinformationen">
+            <ProjectPanel onDatabaseClick={() => navigateTo("/datenbank")} />
+            <section className="panel info-panel" aria-labelledby="privacy-heading">
+              <PanelTitle
+                icon={CheckCircle2}
+                title="App-Prinzipien"
+                description="Die Oberfläche soll schnell, nachvollziehbar und ohne Serverabhängigkeit funktionieren."
+                id="privacy-heading"
+              />
+
+              <div className="project-facts">
+                <div>
+                  <Database aria-hidden="true" size={18} />
+                  <span>Keine API-Runtime, keine SQLite-Datei, kein Tracking.</span>
+                </div>
+                <div>
+                  <FlaskConical aria-hidden="true" size={18} />
+                  <span>Neue Wasser brauchen vollständige Werte und eine belastbare Quelle.</span>
+                </div>
+                <div>
+                  <CheckCircle2 aria-hidden="true" size={18} />
+                  <span>Tests prüfen Formeln, Zielbereiche, UI-Flows und Datenqualität.</span>
+                </div>
+              </div>
+            </section>
+          </section>
+        </section>
+      ) : null}
+    </main>
+  );
+}
+
+function TargetSwitch({
+  target,
+  setTarget,
+}: {
+  target: CoffeeTarget;
+  setTarget: (target: CoffeeTarget) => void;
+}) {
+  return (
+    <div className="segmented-control" aria-label="Zielbereich">
+      <button
+        type="button"
+        className={target === "filter" ? "is-active" : ""}
+        aria-pressed={target === "filter"}
+        onClick={() => setTarget("filter")}
+      >
+        <Target aria-hidden="true" size={16} />
+        Filter
+      </button>
+      <button
+        type="button"
+        className={target === "espresso" ? "is-active" : ""}
+        aria-pressed={target === "espresso"}
+        onClick={() => setTarget("espresso")}
+      >
+        <Coffee aria-hidden="true" size={16} />
+        Espresso
+      </button>
+      <button
+        type="button"
+        className={target === "all" ? "is-active" : ""}
+        aria-pressed={target === "all"}
+        onClick={() => setTarget("all")}
+      >
+        <CheckCircle2 aria-hidden="true" size={16} />
+        Beide
+      </button>
+    </div>
+  );
+}
+
+function CurrentWaterPanel({
+  selectedWater,
+  parsedInput,
+  currentProfile,
+  currentClassification,
+}: {
+  selectedWater: MineralWater | null;
+  parsedInput: { calcium: number; magnesium: number; bicarbonate: number } | null;
+  currentProfile: WaterHardness | null;
+  currentClassification: WaterClassification | null;
+}) {
+  return (
+    <section className="panel current-panel" aria-labelledby="result-heading">
+      <div className="current-heading">
+        <span className="status-dot" aria-hidden="true" />
+        <div>
+          <h2 id="result-heading">Dein Wasser</h2>
+          <p>
+            {selectedWater
+              ? `${selectedWater.brand} ${selectedWater.name}`
+              : parsedInput
+                ? "Manuelle Analyse"
+                : "Noch keine vollständige Analyse"}
+          </p>
+        </div>
+      </div>
+
+      <div className="metric-grid" aria-live="polite">
+        <Metric label="Gesamthärte" value={currentProfile?.totalHardness} unit="°d GH" />
+        <Metric label="Alkalinität" value={currentProfile?.alkalinity} unit="°d Alk" />
+      </div>
+
+      {currentClassification ? (
+        <div className="recommendation-card">
+          <CheckCircle2 aria-hidden="true" size={22} />
+          <div>
+            <strong>{formatEvaluationHeadline(currentClassification.best)}</strong>
+            <span>{formatEvaluationDetail(currentClassification.best)}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="empty-state">
+          <FlaskConical aria-hidden="true" size={20} />
+          <span>Wähle ein Wasser aus der Datenbank oder ergänze alle Werte.</span>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ChartPanel({
+  waters: chartWaters,
+  target,
+  selectedWater,
+  onSelect,
+  axisScale,
+  setAxisScale,
+  showLegend,
+  onToggleLegend,
+}: {
+  waters: EnrichedMineralWater[];
+  target: CoffeeTarget;
+  selectedWater: EnrichedMineralWater | null;
+  onSelect: (id: string) => void;
+  axisScale: AxisScale;
+  setAxisScale: (axisScale: AxisScale) => void;
+  showLegend: boolean;
+  onToggleLegend: () => void;
+}) {
+  return (
+    <section className="panel chart-panel" aria-labelledby="catalog-chart-heading">
+      <div className="panel-toolbar">
+        <PanelTitle
+          icon={Droplet}
+          title="Alle Wasser im Vergleich"
+          description="Jeder Punkt ist ein Mineralwasser. Klicke auf einen Punkt für Details."
+          id="catalog-chart-heading"
+        />
+
+        <div className="toolbar-actions">
+          <button
+            type="button"
+            className="toolbar-button"
+            aria-pressed={showLegend}
+            onClick={onToggleLegend}
+          >
+            <SlidersHorizontal aria-hidden="true" size={17} />
+            Legende {showLegend ? "ausblenden" : "einblenden"}
+          </button>
+          <label className="select-button">
+            <span className="sr-only">Achsen anpassen</span>
+            <SlidersHorizontal aria-hidden="true" size={17} />
+            <select
+              value={axisScale}
+              onChange={(event) => setAxisScale(event.target.value as AxisScale)}
+            >
+              {Object.entries(axisScaleLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <CatalogChart
+        waters={chartWaters}
+        target={target}
+        selectedWater={selectedWater}
+        onSelect={onSelect}
+        axisScale={axisScale}
+        showLegend={showLegend}
+      />
+    </section>
+  );
+}
+
+function DatabasePanel({
+  visibleWaters,
+  selectedWaterId,
+  onSelect,
+  target,
+  setTarget,
+  query,
+  setQuery,
+  gradeFilter,
+  setGradeFilter,
+  sortMode,
+  setSortMode,
+  catalogFilter,
+  setCatalogFilter,
+}: {
+  visibleWaters: EnrichedMineralWater[];
+  selectedWaterId: string;
+  onSelect: (id: string) => void;
+  target: CoffeeTarget;
+  setTarget: (target: CoffeeTarget) => void;
+  query: string;
+  setQuery: (query: string) => void;
+  gradeFilter: GradeFilter;
+  setGradeFilter: (gradeFilter: GradeFilter) => void;
+  sortMode: SortMode;
+  setSortMode: (sortMode: SortMode) => void;
+  catalogFilter: CatalogFilter;
+  setCatalogFilter: (catalogFilter: CatalogFilter) => void;
+}) {
+  return (
+    <section className="panel database-panel" aria-labelledby="database-heading">
+      <div className="database-head">
+        <div className="title-with-count">
+          <PanelTitle
+            icon={Database}
+            title="Mineralwasser Datenbank"
+            description=""
+            id="database-heading"
+          />
+          <span>{waters.length} Wasser</span>
+        </div>
+
+        <div className="database-target-control">
+          <span>Zielwertung</span>
+          <TargetSwitch target={target} setTarget={setTarget} />
+        </div>
+
+        <div className="catalog-controls">
+          <label className="search-field">
+            <Search aria-hidden="true" size={18} />
+            <span className="sr-only">Wasser suchen</span>
+            <input
+              type="search"
+              placeholder="Wasser suchen..."
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+
+          <label className="compact-select">
+            <span>Notenfilter</span>
+            <select
+              value={gradeFilter}
+              onChange={(event) => setGradeFilter(event.target.value as GradeFilter)}
+            >
+              {Object.entries(gradeFilterLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="compact-select">
+            <span>Sortierung</span>
+            <select
+              value={sortMode}
+              onChange={(event) => setSortMode(event.target.value as SortMode)}
+            >
+              {Object.entries(sortLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="filter-chips" aria-label="Katalogfilter">
+            {(Object.keys(catalogFilterLabels) as CatalogFilter[]).map((filterKey) => (
+              <button
+                key={filterKey}
+                type="button"
+                className={catalogFilter === filterKey ? "is-active" : ""}
+                aria-pressed={catalogFilter === filterKey}
+                onClick={() => setCatalogFilter(filterKey)}
+              >
+                {catalogFilterIcon(filterKey)}
+                {catalogFilterLabels[filterKey]}
+              </button>
             ))}
           </div>
-        </section>
-      </section>
-    </main>
+        </div>
+      </div>
+
+      <WaterTable waters={visibleWaters} selectedWaterId={selectedWaterId} onSelect={onSelect} />
+    </section>
+  );
+}
+
+function KnowledgePanel() {
+  return (
+    <section className="panel info-panel" aria-labelledby="knowledge-card-heading">
+      <PanelTitle
+        icon={BookOpen}
+        title="Formeln & Einheiten"
+        description="Die Berechnung nutzt etablierte Wasserchemie, die Bewertung bleibt bewusst praxisnah."
+        id="knowledge-card-heading"
+      />
+
+      <div className="info-list">
+        <div>
+          <strong>Gesamthärte</strong>
+          <p>Calcium und Magnesium werden als deutsche Härtegrade zusammengeführt.</p>
+          <code>GH = Ca / 7,1 + Mg / 4,35</code>
+        </div>
+        <div>
+          <strong>Alkalinität</strong>
+          <p>Hydrogencarbonat ist bei Mineralwasser meist der dominante Puffer.</p>
+          <code>Alk = HCO₃ / 21,8</code>
+        </div>
+      </div>
+
+      <div className="resource-links" aria-label="Referenzen">
+        <a
+          href="https://kaffeemacher.de/blogs/kaffeewissen/kaffeewasser"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Kaffeemacher Kaffeewasser
+          <ExternalLink aria-hidden="true" size={14} />
+        </a>
+        <a
+          href="https://brandconnect.gr/wp-content/uploads/2021/01/SCAE-water-chart-report.pdf"
+          target="_blank"
+          rel="noreferrer"
+        >
+          SCAE Water Chart
+          <ExternalLink aria-hidden="true" size={14} />
+        </a>
+        <a
+          href="https://sca.coffee/sca-news/25/issue-9/english/water-and-coffee-acidity-how-to-adapt-your-water-for-different-extraction-methods-25-magazine-issue-9"
+          target="_blank"
+          rel="noreferrer"
+        >
+          SCA zu Brew Ratio
+          <ExternalLink aria-hidden="true" size={14} />
+        </a>
+        <a
+          href="https://www.lamarzocco.com/uk/en/technical-questions/la-marzocco-water-specifications/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          La Marzocco Specs
+          <ExternalLink aria-hidden="true" size={14} />
+        </a>
+        <a
+          href="https://www.portioli.it/it/blog/caff-e-acqua-l-importanza-della-qualit-dell-acqua-nell-espresso"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Portioli Espresso
+          <ExternalLink aria-hidden="true" size={14} />
+        </a>
+      </div>
+    </section>
+  );
+}
+
+function ProjectPanel({ onDatabaseClick }: { onDatabaseClick: () => void }) {
+  return (
+    <section className="panel info-panel" aria-labelledby="project-card-heading">
+      <PanelTitle
+        icon={Info}
+        title="Über das Projekt"
+        description="Eine statische React-App für GitHub Pages, ohne Server und ohne Tracking."
+        id="project-card-heading"
+      />
+
+      <div className="project-facts">
+        <div>
+          <Database aria-hidden="true" size={18} />
+          <span>Lokale JSON-Datenbank mit {waters.length} stillen Mineralwassern.</span>
+        </div>
+        <div>
+          <FlaskConical aria-hidden="true" size={18} />
+          <span>Nur Hersteller-, Labor-, Test- oder nachvollziehbare Händlerquellen.</span>
+        </div>
+        <div>
+          <CheckCircle2 aria-hidden="true" size={18} />
+          <span>Formeln und Daten werden per Tests gegen ungültige Werte abgesichert.</span>
+        </div>
+      </div>
+
+      <button className="inline-source" type="button" onClick={onDatabaseClick}>
+        Zur Datenbank springen
+        <ChevronRight aria-hidden="true" size={16} />
+      </button>
+    </section>
+  );
+}
+
+function PanelTitle({
+  icon: Icon,
+  title,
+  description,
+  id,
+}: {
+  icon: typeof Droplet;
+  title: string;
+  description: string;
+  id: string;
+}) {
+  return (
+    <div className="panel-title">
+      <Icon aria-hidden="true" size={20} />
+      <div>
+        <h2 id={id}>{title}</h2>
+        {description ? <p>{description}</p> : null}
+      </div>
+    </div>
   );
 }
 
@@ -345,17 +873,20 @@ function NumberField({
 }) {
   return (
     <label className="field" htmlFor={id}>
-      <span>{label} (mg/L)</span>
-      <input
-        id={id}
-        type="number"
-        min="0"
-        inputMode="decimal"
-        step="0.1"
-        placeholder="z. B. 12"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
+      <span>{label}</span>
+      <span className="unit-input">
+        <input
+          id={id}
+          type="number"
+          min="0"
+          inputMode="decimal"
+          step="0.1"
+          placeholder="z. B. 12"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        <span aria-hidden="true">mg/L</span>
+      </span>
     </label>
   );
 }
@@ -370,135 +901,180 @@ function Metric({ label, value, unit }: { label: string; value?: number; unit: s
   );
 }
 
-function WaterCard({ water, onSelect }: { water: EnrichedMineralWater; onSelect: () => void }) {
-  const bestTargetLabel = shortTargetLabels[water.classification.best.target];
-
-  return (
-    <article className="water-card">
-      <div>
-        <div className="water-title-row">
-          <h3>
-            {water.brand} <span>{water.name}</span>
-          </h3>
-          <span className={`status grade-${water.classification.best.roundedGrade}`}>
-            Beste Note {water.classification.best.roundedGrade} für {bestTargetLabel}
-          </span>
-        </div>
-        <p>
-          {formatNumber(water.profile.totalHardness)} °d GH ·{" "}
-          {formatNumber(water.profile.alkalinity)} °d Alk · {water.classification.best.label}
-        </p>
-        <div className="grade-pair" aria-label="Kaffee-Eignung">
-          <GradeBadge evaluation={water.classification.evaluations.filter} compact />
-          <GradeBadge evaluation={water.classification.evaluations.espresso} compact />
-        </div>
-        <div className="chips" aria-label="Verfügbarkeit">
-          {water.availableAt.map((place) => (
-            <span key={place}>{place}</span>
-          ))}
-        </div>
-        <p className="source-info">
-          {water.sourceLabel} · geprüft {formatDate(water.lastVerified)}
-        </p>
-      </div>
-
-      <dl className="mineral-list" aria-label="Mineralwerte">
-        <div>
-          <dt>Ca</dt>
-          <dd>{formatNumber(water.calciumMgL)}</dd>
-        </div>
-        <div>
-          <dt>Mg</dt>
-          <dd>{formatNumber(water.magnesiumMgL)}</dd>
-        </div>
-        <div>
-          <dt>HCO3</dt>
-          <dd>{formatNumber(water.bicarbonateMgL)}</dd>
-        </div>
-      </dl>
-
-      <div className="card-actions">
-        <button type="button" onClick={onSelect}>
-          <Droplets aria-hidden="true" size={18} />
-          Übernehmen
-        </button>
-        <a href={water.sourceUrl} target="_blank" rel="noreferrer">
-          <ExternalLink aria-hidden="true" size={16} />
-          Quelle
-        </a>
-      </div>
-    </article>
-  );
-}
-
-function GradeBadge({
-  evaluation,
-  compact = false,
+function WaterTable({
+  waters: tableWaters,
+  selectedWaterId,
+  onSelect,
 }: {
-  evaluation: WaterTargetEvaluation;
-  compact?: boolean;
+  waters: EnrichedMineralWater[];
+  selectedWaterId: string;
+  onSelect: (id: string) => void;
 }) {
   return (
-    <div className={`grade-badge grade-${evaluation.roundedGrade}`}>
-      <span>
-        {compact ? shortTargetLabels[evaluation.target] : targetLabels[evaluation.target]}
-      </span>
-      <strong>Note {evaluation.roundedGrade}</strong>
-      <small>
-        {evaluation.label} · {zoneLabels[evaluation.zone]}
-      </small>
+    <div className="table-shell">
+      <table>
+        <caption>
+          {tableWaters.length} von {waters.length} Wasser
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Marke</th>
+            <th scope="col">Wasser</th>
+            <th scope="col">GH (°d)</th>
+            <th scope="col">Alk (°d)</th>
+            <th scope="col">Filterkaffee</th>
+            <th scope="col">Espresso</th>
+            <th scope="col">Verfügbarkeit</th>
+            <th scope="col">Quelle</th>
+            <th scope="col">
+              <span className="sr-only">Aktion</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {tableWaters.map((water) => (
+            <tr key={water.id} className={water.id === selectedWaterId ? "is-selected" : ""}>
+              <td>
+                <span className="brand-cell">
+                  <span className="brand-avatar" aria-hidden="true">
+                    {water.brand.slice(0, 2)}
+                  </span>
+                  {water.brand}
+                </span>
+              </td>
+              <td>{water.name}</td>
+              <td>{formatNumber(water.profile.totalHardness)}</td>
+              <td>{formatNumber(water.profile.alkalinity)}</td>
+              <td>
+                <GradePill evaluation={water.classification.evaluations.filter} />
+              </td>
+              <td>
+                <GradePill evaluation={water.classification.evaluations.espresso} />
+              </td>
+              <td>
+                <AvailabilityPills water={water} />
+              </td>
+              <td>
+                <a className="source-link" href={water.sourceUrl} target="_blank" rel="noreferrer">
+                  {sourceTypeLabel(water.sourceType)}
+                  <ExternalLink aria-hidden="true" size={14} />
+                </a>
+              </td>
+              <td>
+                <button
+                  className="row-action"
+                  type="button"
+                  aria-label={`${water.brand} ${water.name} übernehmen`}
+                  onClick={() => onSelect(water.id)}
+                >
+                  <ChevronRight aria-hidden="true" size={18} />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
 
-function WaterChart({ profile, target }: { profile: WaterHardness | null; target: CoffeeTarget }) {
-  const width = 680;
+function GradePill({ evaluation }: { evaluation: WaterTargetEvaluation }) {
+  return (
+    <span className={`grade-pill grade-${evaluation.roundedGrade}`}>
+      <strong>{evaluation.roundedGrade}</strong>
+      {evaluation.label}
+    </span>
+  );
+}
+
+function AvailabilityPills({ water }: { water: MineralWater }) {
+  const flags = availabilityFlags(water);
+  const visibleFlags: CatalogFilter[] = flags.length > 0 ? flags : ["regional"];
+
+  return (
+    <span className="availability-pills">
+      {visibleFlags.slice(0, 2).map((flag) => (
+        <span key={flag}>{availabilityLabel(flag)}</span>
+      ))}
+    </span>
+  );
+}
+
+function CatalogChart({
+  waters: plottedWaters,
+  target,
+  selectedWater,
+  onSelect,
+  axisScale,
+  showLegend,
+}: {
+  waters: EnrichedMineralWater[];
+  target: CoffeeTarget;
+  selectedWater: EnrichedMineralWater | null;
+  onSelect: (id: string) => void;
+  axisScale: AxisScale;
+  showLegend: boolean;
+}) {
+  const width = 980;
   const height = 420;
-  const padding = { top: 28, right: 28, bottom: 58, left: 62 };
-  const xMax = 8;
-  const yMax = 12;
+  const padding = { top: 28, right: 26, bottom: 54, left: 62 };
+  const fullXMax = Math.max(
+    10,
+    Math.ceil(Math.max(...plottedWaters.map((water) => water.profile.alkalinity), 10) / 5) * 5,
+  );
+  const fullYMax = Math.max(
+    14,
+    Math.ceil(Math.max(...plottedWaters.map((water) => water.profile.totalHardness), 14) / 10) * 10,
+  );
+  const xMax = axisScale === "coffee" ? 10 : fullXMax;
+  const yMax = axisScale === "coffee" ? 14 : fullYMax;
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
   const x = (value: number) => padding.left + (clamp(value, 0, xMax) / xMax) * plotWidth;
   const y = (value: number) =>
     padding.top + plotHeight - (clamp(value, 0, yMax) / yMax) * plotHeight;
-  const currentX = profile ? x(profile.alkalinity) : x(0);
-  const currentY = profile ? y(profile.totalHardness) : y(0);
-  const filterZones = TARGET_ZONES.filter;
-  const espressoZones = TARGET_ZONES.espresso;
-  const isClamped =
-    profile &&
-    (profile.alkalinity > xMax ||
-      profile.alkalinity < 0 ||
-      profile.totalHardness > yMax ||
-      profile.totalHardness < 0);
+  const targetKeys = target === "all" ? (["filter", "espresso"] as const) : ([target] as const);
+  const hasClampedPoints = plottedWaters.some(
+    (water) =>
+      water.profile.alkalinity > xMax ||
+      water.profile.totalHardness > yMax ||
+      water.profile.alkalinity < 0 ||
+      water.profile.totalHardness < 0,
+  );
+  const selectedVisible = selectedWater
+    ? plottedWaters.some((water) => water.id === selectedWater.id)
+    : false;
 
   return (
-    <figure className="chart-wrap">
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="chart-title chart-desc">
-        <title id="chart-title">Zielbereiche für Kaffeewasser</title>
-        <desc id="chart-desc">
-          Diagramm mit Alkalinität auf der X-Achse und Gesamthärte auf der Y-Achse.
+    <figure className="catalog-chart-wrap">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-labelledby="catalog-chart-title catalog-chart-desc"
+      >
+        <title id="catalog-chart-title">Vergleich aller gefilterten Mineralwasser</title>
+        <desc id="catalog-chart-desc">
+          Streudiagramm mit Alkalinität auf der X-Achse und Gesamthärte auf der Y-Achse.
         </desc>
-        <rect x="0" y="0" width={width} height={height} rx="18" className="chart-bg" />
+        <rect x="0" y="0" width={width} height={height} rx="12" className="chart-bg" />
 
-        {Array.from({ length: xMax + 1 }, (_, index) => (
-          <g key={`x-${index}`}>
+        {chartTicks(xMax, axisScale === "coffee" ? 1 : 5).map((tick) => (
+          <g key={`catalog-x-${tick}`}>
             <line
-              x1={x(index)}
-              x2={x(index)}
+              x1={x(tick)}
+              x2={x(tick)}
               y1={padding.top}
               y2={padding.top + plotHeight}
               className="grid-line"
             />
-            <text x={x(index)} y={height - 28} className="axis-tick" textAnchor="middle">
-              {index}
+            <text x={x(tick)} y={height - 24} className="axis-tick" textAnchor="middle">
+              {tick}
             </text>
           </g>
         ))}
 
-        {Array.from({ length: yMax / 2 + 1 }, (_, index) => index * 2).map((tick) => (
-          <g key={`y-${tick}`}>
+        {chartTicks(yMax, axisScale === "coffee" ? 2 : 10).map((tick) => (
+          <g key={`catalog-y-${tick}`}>
             <line
               x1={padding.left}
               x2={padding.left + plotWidth}
@@ -506,7 +1082,7 @@ function WaterChart({ profile, target }: { profile: WaterHardness | null; target
               y2={y(tick)}
               className="grid-line"
             />
-            <text x={padding.left - 16} y={y(tick) + 5} className="axis-tick" textAnchor="end">
+            <text x={padding.left - 14} y={y(tick) + 5} className="axis-tick" textAnchor="end">
               {tick}
             </text>
           </g>
@@ -527,36 +1103,58 @@ function WaterChart({ profile, target }: { profile: WaterHardness | null; target
           className="axis-line"
         />
 
-        <TargetRect
-          range={filterZones.extended}
-          x={x}
-          y={y}
-          active={target === "filter" || target === "all"}
-          className="filter-range range-extended"
-        />
-        <TargetRect
-          range={filterZones.core}
-          x={x}
-          y={y}
-          active={target === "filter" || target === "all"}
-          className="filter-range range-core"
-        />
-        <TargetRect
-          range={espressoZones.extended}
-          x={x}
-          y={y}
-          active={target === "espresso" || target === "all"}
-          className="espresso-range range-extended"
-        />
-        <TargetRect
-          range={espressoZones.core}
-          x={x}
-          y={y}
-          active={target === "espresso" || target === "all"}
-          className="espresso-range range-core"
-        />
+        {targetKeys.includes("filter") ? <TargetZoneGroup targetKey="filter" x={x} y={y} /> : null}
+        {targetKeys.includes("espresso") ? (
+          <TargetZoneGroup targetKey="espresso" x={x} y={y} />
+        ) : null}
 
-        <text x={width / 2} y={height - 8} className="axis-label" textAnchor="middle">
+        {plottedWaters.map((water) => {
+          const active = selectedWater?.id === water.id;
+          const isClamped =
+            water.profile.alkalinity > xMax ||
+            water.profile.totalHardness > yMax ||
+            water.profile.alkalinity < 0 ||
+            water.profile.totalHardness < 0;
+          const grade = water.classification.best.roundedGrade;
+          const label = `${water.brand} ${water.name}`;
+          const summary =
+            formatBestTargetSummary(water.classification.best) ??
+            `${water.classification.best.label} · Note ${grade}`;
+
+          return (
+            <g
+              key={water.id}
+              className={`catalog-point-group${active ? " is-selected" : ""}`}
+              role="button"
+              tabIndex={0}
+              aria-label={`${label} übernehmen`}
+              onClick={() => onSelect(water.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelect(water.id);
+                }
+              }}
+            >
+              <title>
+                {label}: {formatNumber(water.profile.totalHardness)} °d GH,{" "}
+                {formatNumber(water.profile.alkalinity)} °d Alk, {summary}
+              </title>
+              <circle
+                cx={x(water.profile.alkalinity)}
+                cy={y(water.profile.totalHardness)}
+                r={active ? 7 : 4.7}
+                className={`catalog-point point-grade-${grade}${isClamped ? " is-clamped" : ""}`}
+              />
+            </g>
+          );
+        })}
+
+        {selectedWater && selectedVisible ? (
+          <ChartTooltip water={selectedWater} x={x} y={y} xMax={xMax} yMax={yMax} />
+        ) : null}
+
+        <text x={width / 2} y={height - 7} className="axis-label" textAnchor="middle">
           Alkalinität (°d Alk)
         </text>
         <text
@@ -568,230 +1166,46 @@ function WaterChart({ profile, target }: { profile: WaterHardness | null; target
         >
           Gesamthärte (°d GH)
         </text>
-
-        {profile ? (
-          <g>
-            <circle cx={currentX} cy={currentY} r="9" className="current-point-ring" />
-            <circle cx={currentX} cy={currentY} r="5" className="current-point" />
-          </g>
-        ) : null}
       </svg>
-      <figcaption>
-        <span className="legend-item legend-filter-core">Filter Kern</span>
-        <span className="legend-item legend-filter-extended">Filter erweitert</span>
-        <span className="legend-item legend-espresso-core">Espresso Kern</span>
-        <span className="legend-item legend-espresso-extended">Espresso erweitert</span>
-        <span className="legend-item legend-current">Dein Wasser</span>
-        {isClamped ? <span className="chart-note">Punkt liegt außerhalb der Skala.</span> : null}
-      </figcaption>
-    </figure>
-  );
-}
 
-function CatalogChart({
-  waters: plottedWaters,
-  target,
-  selectedWaterId,
-  onSelect,
-}: {
-  waters: EnrichedMineralWater[];
-  target: CoffeeTarget;
-  selectedWaterId: string;
-  onSelect: (id: string) => void;
-}) {
-  const width = 900;
-  const height = 360;
-  const padding = { top: 24, right: 28, bottom: 52, left: 58 };
-  const xMax = 28;
-  const yMax = 32;
-  const plotWidth = width - padding.left - padding.right;
-  const plotHeight = height - padding.top - padding.bottom;
-  const x = (value: number) => padding.left + (clamp(value, 0, xMax) / xMax) * plotWidth;
-  const y = (value: number) =>
-    padding.top + plotHeight - (clamp(value, 0, yMax) / yMax) * plotHeight;
-  const targetKeys = target === "all" ? (["filter", "espresso"] as const) : ([target] as const);
-  const hasClampedPoints = plottedWaters.some(
-    (water) =>
-      water.profile.alkalinity > xMax ||
-      water.profile.totalHardness > yMax ||
-      water.profile.alkalinity < 0 ||
-      water.profile.totalHardness < 0,
-  );
-
-  return (
-    <section className="catalog-chart" aria-labelledby="catalog-chart-heading">
-      <div className="section-heading compact-heading">
-        <ChartScatter aria-hidden="true" size={22} />
-        <div>
-          <h3 id="catalog-chart-heading">Mineralwasser im Vergleich</h3>
-          <p>{plottedWaters.length} Treffer im Diagramm. Punkte lassen sich übernehmen.</p>
-        </div>
-      </div>
-
-      <figure className="catalog-chart-wrap">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          role="img"
-          aria-labelledby="catalog-chart-title catalog-chart-desc"
-        >
-          <title id="catalog-chart-title">Vergleich aller gefilterten Mineralwasser</title>
-          <desc id="catalog-chart-desc">
-            Streudiagramm mit Alkalinität auf der X-Achse und Gesamthärte auf der Y-Achse.
-          </desc>
-          <rect x="0" y="0" width={width} height={height} rx="12" className="chart-bg" />
-
-          {Array.from({ length: 8 }, (_, index) => index * 4).map((tick) => (
-            <g key={`catalog-x-${tick}`}>
-              <line
-                x1={x(tick)}
-                x2={x(tick)}
-                y1={padding.top}
-                y2={padding.top + plotHeight}
-                className="grid-line"
-              />
-              <text x={x(tick)} y={height - 26} className="axis-tick" textAnchor="middle">
-                {tick}
-              </text>
-            </g>
-          ))}
-
-          {Array.from({ length: 9 }, (_, index) => index * 4).map((tick) => (
-            <g key={`catalog-y-${tick}`}>
-              <line
-                x1={padding.left}
-                x2={padding.left + plotWidth}
-                y1={y(tick)}
-                y2={y(tick)}
-                className="grid-line"
-              />
-              <text x={padding.left - 14} y={y(tick) + 5} className="axis-tick" textAnchor="end">
-                {tick}
-              </text>
-            </g>
-          ))}
-
-          <line
-            x1={padding.left}
-            x2={padding.left + plotWidth}
-            y1={padding.top + plotHeight}
-            y2={padding.top + plotHeight}
-            className="axis-line"
-          />
-          <line
-            x1={padding.left}
-            x2={padding.left}
-            y1={padding.top}
-            y2={padding.top + plotHeight}
-            className="axis-line"
-          />
-
-          {targetKeys.includes("filter") ? (
-            <>
-              <TargetRect
-                range={TARGET_ZONES.filter.extended}
-                x={x}
-                y={y}
-                active
-                className="filter-range range-extended"
-              />
-              <TargetRect
-                range={TARGET_ZONES.filter.core}
-                x={x}
-                y={y}
-                active
-                className="filter-range range-core"
-              />
-            </>
-          ) : null}
-
-          {targetKeys.includes("espresso") ? (
-            <>
-              <TargetRect
-                range={TARGET_ZONES.espresso.extended}
-                x={x}
-                y={y}
-                active
-                className="espresso-range range-extended"
-              />
-              <TargetRect
-                range={TARGET_ZONES.espresso.core}
-                x={x}
-                y={y}
-                active
-                className="espresso-range range-core"
-              />
-            </>
-          ) : null}
-
-          {plottedWaters.map((water) => {
-            const active = water.id === selectedWaterId;
-            const isClamped =
-              water.profile.alkalinity > xMax ||
-              water.profile.totalHardness > yMax ||
-              water.profile.alkalinity < 0 ||
-              water.profile.totalHardness < 0;
-            const grade = water.classification.best.roundedGrade;
-            const label = `${water.brand} ${water.name}`;
-
-            return (
-              <g
-                key={water.id}
-                className={`catalog-point-group${active ? " is-selected" : ""}`}
-                role="button"
-                tabIndex={0}
-                aria-label={`${label} übernehmen`}
-                onClick={() => onSelect(water.id)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onSelect(water.id);
-                  }
-                }}
-              >
-                <title>
-                  {label}: {formatNumber(water.profile.totalHardness)} °d GH,{" "}
-                  {formatNumber(water.profile.alkalinity)} °d Alk, beste Note {grade}
-                </title>
-                <circle
-                  cx={x(water.profile.alkalinity)}
-                  cy={y(water.profile.totalHardness)}
-                  r={active ? 7 : 5}
-                  className={`catalog-point point-grade-${grade}${
-                    isClamped ? " is-clamped" : ""
-                  }`}
-                />
-              </g>
-            );
-          })}
-
-          <text x={width / 2} y={height - 8} className="axis-label" textAnchor="middle">
-            Alkalinität (°d Alk)
-          </text>
-          <text
-            x="18"
-            y={height / 2}
-            className="axis-label"
-            textAnchor="middle"
-            transform={`rotate(-90 18 ${height / 2})`}
-          >
-            Gesamthärte (°d GH)
-          </text>
-        </svg>
-
+      {showLegend ? (
         <figcaption>
-          <span className="legend-item legend-filter-core">Filter Kern</span>
-          <span className="legend-item legend-filter-extended">Filter erweitert</span>
-          <span className="legend-item legend-espresso-core">Espresso Kern</span>
-          <span className="legend-item legend-espresso-extended">Espresso erweitert</span>
-          <span className="legend-item legend-point-good">Note 1-2</span>
-          <span className="legend-item legend-point-solid">Note 3-4</span>
-          <span className="legend-item legend-point-avoid">Note 5-6</span>
+          <span className="legend-group-label filter">Filterkaffee</span>
+          <span className="legend-item legend-filter-core">Kernbereich</span>
+          <span className="legend-item legend-filter-extended">Erweiterter Bereich</span>
+          <span className="legend-item legend-filter-usable">Note-3-Toleranz</span>
+          <span className="legend-group-label espresso">Espresso</span>
+          <span className="legend-item legend-espresso-core">Kernbereich</span>
+          <span className="legend-item legend-espresso-extended">Erweiterter Bereich</span>
+          <span className="legend-item legend-espresso-usable">Note-3-Toleranz</span>
+          <span className="legend-item legend-point-good">Mineralwasser</span>
           {hasClampedPoints ? (
             <span className="chart-note">Einige Punkte liegen am Rand.</span>
           ) : null}
         </figcaption>
-      </figure>
-    </section>
+      ) : null}
+    </figure>
+  );
+}
+
+function TargetZoneGroup({
+  targetKey,
+  x,
+  y,
+}: {
+  targetKey: SingleCoffeeTarget;
+  x: (value: number) => number;
+  y: (value: number) => number;
+}) {
+  const zones = TARGET_ZONES[targetKey];
+  const classPrefix = targetKey === "filter" ? "filter-range" : "espresso-range";
+
+  return (
+    <>
+      <TargetRect range={zones.usable} x={x} y={y} className={`${classPrefix} range-usable`} />
+      <TargetRect range={zones.extended} x={x} y={y} className={`${classPrefix} range-extended`} />
+      <TargetRect range={zones.core} x={x} y={y} className={`${classPrefix} range-core`} />
+    </>
   );
 }
 
@@ -799,13 +1213,11 @@ function TargetRect({
   range,
   x,
   y,
-  active,
   className,
 }: {
   range: TargetRange;
   x: (value: number) => number;
   y: (value: number) => number;
-  active: boolean;
   className: string;
 }) {
   const rectX = x(range.alkalinity.min);
@@ -813,43 +1225,239 @@ function TargetRect({
   const width = x(range.alkalinity.max) - x(range.alkalinity.min);
   const height = y(range.totalHardness.min) - y(range.totalHardness.max);
 
+  return <rect x={rectX} y={rectY} width={width} height={height} className={className} />;
+}
+
+function ChartTooltip({
+  water,
+  x,
+  y,
+  xMax,
+  yMax,
+}: {
+  water: EnrichedMineralWater;
+  x: (value: number) => number;
+  y: (value: number) => number;
+  xMax: number;
+  yMax: number;
+}) {
+  const pointX = x(water.profile.alkalinity);
+  const pointY = y(water.profile.totalHardness);
+  const width = 220;
+  const height = 112;
+  const tooltipX = clamp(pointX + 16, 76, 980 - width - 28);
+  const tooltipY = clamp(pointY - height / 2, 36, 420 - height - 62);
+  const titleLines = splitTitle(`${water.brand} ${water.name}`);
+  const isClamped =
+    water.profile.alkalinity > xMax ||
+    water.profile.totalHardness > yMax ||
+    water.profile.alkalinity < 0 ||
+    water.profile.totalHardness < 0;
+
   return (
-    <g className={active ? "range-active" : "range-muted"}>
-      <rect x={rectX} y={rectY} width={width} height={height} className={className} />
+    <g className="chart-tooltip" pointerEvents="none">
+      <line x1={pointX} y1={pointY} x2={tooltipX} y2={tooltipY + 58} />
+      <rect x={tooltipX} y={tooltipY} width={width} height={height} rx="8" />
+      {titleLines.map((line, index) => (
+        <text key={line} x={tooltipX + 14} y={tooltipY + 24 + index * 18} className="tooltip-title">
+          {line}
+        </text>
+      ))}
+      <text x={tooltipX + 14} y={tooltipY + 66} className="tooltip-metric">
+        GH {formatNumber(water.profile.totalHardness)}
+      </text>
+      <text x={tooltipX + 91} y={tooltipY + 66} className="tooltip-metric">
+        Alk {formatNumber(water.profile.alkalinity)}
+      </text>
+      <text x={tooltipX + 14} y={tooltipY + 91} className="tooltip-status">
+        {formatBestTargetSummary(water.classification.best) ??
+          `${water.classification.best.label} · Note ${water.classification.best.roundedGrade}`}
+      </text>
+      {isClamped ? (
+        <text x={tooltipX + 14} y={tooltipY + 106} className="tooltip-muted">
+          Punkt am Rand der Skala
+        </text>
+      ) : null}
     </g>
   );
 }
 
-function waterMatchesAvailability(
-  water: Pick<MineralWater, "availableAt">,
-  filter: AvailabilityFilter,
+function waterMatchesCatalogFilter(
+  water: Pick<MineralWater, "availableAt" | "brand" | "name" | "sourceLabel">,
+  filter: CatalogFilter,
 ): boolean {
-  if (filter === "any") {
+  if (filter === "all") {
     return true;
   }
 
-  const availability = water.availableAt.join(" ").toLowerCase();
-  const isBroadlyAvailable =
-    availability.includes("lebensmittelhandel") ||
-    availability.includes("online kaufen") ||
-    availability.includes("hersteller-webshop");
-  const isRegional =
-    availability.includes("regionaler handel") ||
-    availability.includes("gastronomie") ||
-    availability.includes("händlersuche") ||
-    availability.includes("shopfinder") ||
-    availability.includes("getränkemarkt");
-  const needsCheck = availability.includes("prüfen");
+  return availabilityFlags(water).includes(filter);
+}
 
+function availabilityFlags(
+  water: Pick<MineralWater, "availableAt" | "brand" | "name" | "sourceLabel">,
+): CatalogFilter[] {
+  const text = `${water.brand} ${water.name} ${water.availableAt.join(" ")} ${
+    water.sourceLabel
+  }`.toLowerCase();
+  const flags: CatalogFilter[] = [];
+
+  if (
+    text.includes("lebensmittelhandel") ||
+    text.includes("deutschlandweit") ||
+    text.includes("rewe") ||
+    text.includes("dm") ||
+    text.includes("lidl") ||
+    text.includes("kaufland") ||
+    text.includes("online kaufen") ||
+    text.includes("hersteller-webshop")
+  ) {
+    flags.push("broad");
+  }
+
+  if (
+    text.includes("regional") ||
+    text.includes("getränkemarkt") ||
+    text.includes("shopfinder") ||
+    text.includes("händlersuche") ||
+    text.includes("gastro")
+  ) {
+    flags.push("regional");
+  }
+
+  if (
+    text.includes("lidl") ||
+    text.includes("kaufland") ||
+    text.includes("aldi") ||
+    text.includes("discounter") ||
+    text.includes("saskia") ||
+    text.includes("k-classic")
+  ) {
+    flags.push("discounter");
+  }
+
+  if (text.includes("bio")) {
+    flags.push("bio");
+  }
+
+  return flags;
+}
+
+function availabilityLabel(flag: CatalogFilter): string {
+  if (flag === "broad") {
+    return "De";
+  }
+
+  if (flag === "regional") {
+    return "regional";
+  }
+
+  if (flag === "discounter") {
+    return "Discount";
+  }
+
+  if (flag === "bio") {
+    return "Bio";
+  }
+
+  return "Alle";
+}
+
+function catalogFilterIcon(filter: CatalogFilter) {
   if (filter === "broad") {
-    return isBroadlyAvailable;
+    return <Store aria-hidden="true" size={16} />;
   }
 
   if (filter === "regional") {
-    return isRegional;
+    return <MapPin aria-hidden="true" size={16} />;
   }
 
-  return needsCheck;
+  if (filter === "discounter") {
+    return <Database aria-hidden="true" size={16} />;
+  }
+
+  if (filter === "bio") {
+    return <Droplet aria-hidden="true" size={16} />;
+  }
+
+  return <SlidersHorizontal aria-hidden="true" size={16} />;
+}
+
+function compareWaters(a: EnrichedMineralWater, b: EnrichedMineralWater, sortMode: SortMode) {
+  if (sortMode === "name") {
+    return `${a.brand} ${a.name}`.localeCompare(`${b.brand} ${b.name}`, "de");
+  }
+
+  if (sortMode === "hardness") {
+    return a.profile.totalHardness - b.profile.totalHardness;
+  }
+
+  if (sortMode === "filter") {
+    return (
+      a.classification.evaluations.filter.grade - b.classification.evaluations.filter.grade ||
+      a.brand.localeCompare(b.brand, "de")
+    );
+  }
+
+  if (sortMode === "espresso") {
+    return (
+      a.classification.evaluations.espresso.grade - b.classification.evaluations.espresso.grade ||
+      a.brand.localeCompare(b.brand, "de")
+    );
+  }
+
+  return a.score - b.score || a.brand.localeCompare(b.brand, "de");
+}
+
+function sourceTypeLabel(sourceType: MineralWater["sourceType"]): string {
+  if (sourceType === "retailer") {
+    return "Handel (mit Laborangabe)";
+  }
+
+  if (sourceType === "manufacturer_lab" || sourceType === "official_lab") {
+    return "Hersteller / Labor";
+  }
+
+  if (sourceType === "consumer_test") {
+    return "Testquelle";
+  }
+
+  return "Hersteller";
+}
+
+function formatEvaluationHeadline(evaluation: WaterTargetEvaluation): string {
+  const targetLabel = targetLabels[evaluation.target];
+
+  if (evaluation.roundedGrade <= 2) {
+    return `${evaluation.label} für ${targetLabel}`;
+  }
+
+  if (evaluation.roundedGrade === 3) {
+    return `Brauchbar für ${targetLabel}`;
+  }
+
+  return `Nur eingeschränkt für ${targetLabel}`;
+}
+
+function formatEvaluationDetail(evaluation: WaterTargetEvaluation): string {
+  if (evaluation.roundedGrade === 1 && evaluation.zone === "extended") {
+    return `${evaluation.label} · nahe Kernbereich`;
+  }
+
+  return `${evaluation.label} · ${zoneLabels[evaluation.zone]}`;
+}
+
+function formatBestTargetSummary(evaluation: WaterTargetEvaluation): string | null {
+  const targetLabel = targetShortLabels[evaluation.target];
+
+  if (evaluation.roundedGrade <= 3) {
+    return `${targetLabel} · Note ${evaluation.roundedGrade}`;
+  }
+
+  if (evaluation.roundedGrade === 4) {
+    return `grenzwertig · Note 4`;
+  }
+
+  return null;
 }
 
 function toInput(water: MineralWater): MineralInput {
@@ -881,6 +1489,42 @@ function parsePositiveNumber(value: string): number | null {
   return Number.isFinite(normalized) && normalized >= 0 ? normalized : null;
 }
 
+function chartTicks(max: number, step: number): number[] {
+  const ticks: number[] = [];
+
+  for (let value = 0; value <= max; value += step) {
+    ticks.push(value);
+  }
+
+  return ticks;
+}
+
+function splitTitle(title: string): string[] {
+  if (title.length <= 24) {
+    return [title];
+  }
+
+  const words = title.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+    if (nextLine.length > 24 && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = nextLine;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines.slice(0, 2);
+}
+
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("de-DE", {
     maximumFractionDigits: 2,
@@ -888,10 +1532,56 @@ function formatNumber(value: number): string {
   }).format(value);
 }
 
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("de-DE", {
-    dateStyle: "medium",
-  }).format(new Date(`${value}T00:00:00`));
+function readInitialRoute(): AppRoute {
+  if (typeof window === "undefined") {
+    return "/";
+  }
+
+  const redirectedRoute = window.sessionStorage.getItem(githubPagesRedirectKey);
+  if (redirectedRoute) {
+    window.sessionStorage.removeItem(githubPagesRedirectKey);
+    const route = normalizeRoutePath(redirectedRoute);
+    window.history.replaceState(null, "", buildRouteHref(route));
+    return route;
+  }
+
+  return normalizeRoutePath(window.location.pathname);
+}
+
+function normalizeRoutePath(pathname: string): AppRoute {
+  let path = pathname.split(/[?#]/)[0] || "/";
+  const basePath = getBasePath();
+
+  if (basePath !== "/" && path.startsWith(basePath)) {
+    path = path.slice(basePath.length) || "/";
+  }
+
+  if (!path.startsWith("/")) {
+    path = `/${path}`;
+  }
+
+  if (path.length > 1 && path.endsWith("/")) {
+    path = path.slice(0, -1);
+  }
+
+  return routePaths.has(path as AppRoute) ? (path as AppRoute) : "/";
+}
+
+function buildRouteHref(route: AppRoute): string {
+  const basePath = getBasePath();
+
+  if (basePath === "/") {
+    return route;
+  }
+
+  return route === "/" ? `${basePath}/` : `${basePath}${route}`;
+}
+
+function getBasePath(): string {
+  const baseUrl = import.meta.env.BASE_URL || "/";
+  const withoutTrailingSlash = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+
+  return withoutTrailingSlash || "/";
 }
 
 function clamp(value: number, min: number, max: number): number {

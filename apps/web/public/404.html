@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kaffeewasser Rechner</title>
+    <script>
+      (function () {
+        var basePath = "/coffeewater";
+        var pathname = window.location.pathname;
+        var route = pathname.indexOf(basePath) === 0 ? pathname.slice(basePath.length) : pathname;
+
+        if (!route || route === "/") {
+          route = "/";
+        }
+
+        window.sessionStorage.setItem(
+          "coffeewater:redirect",
+          route + window.location.search + window.location.hash,
+        );
+        window.location.replace(basePath + "/");
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
