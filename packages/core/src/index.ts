@@ -25,11 +25,12 @@ export type TargetRange = {
 export type TargetZones = {
   core: TargetRange;
   extended: TargetRange;
+  usable: TargetRange;
 };
 
 export type SingleCoffeeTarget = Exclude<CoffeeTarget, "all">;
 
-export type WaterTargetZone = "core" | "extended" | "outside";
+export type WaterTargetZone = "core" | "extended" | "usable" | "outside";
 
 export type WaterGradeLabel =
   | "sehr gut"
@@ -48,6 +49,7 @@ export type WaterTargetEvaluation = {
   distance: number;
   inIdealRange: boolean;
   inExtendedRange: boolean;
+  inUsableRange: boolean;
 };
 
 export type WaterClassification = {
@@ -64,8 +66,12 @@ export const TARGET_ZONES: Record<SingleCoffeeTarget, TargetZones> = {
       alkalinity: { min: 1, max: 2 },
     },
     extended: {
-      totalHardness: { min: 2, max: 7 },
-      alkalinity: { min: 1, max: 4 },
+      totalHardness: { min: 1.5, max: 8 },
+      alkalinity: { min: 0.8, max: 4.5 },
+    },
+    usable: {
+      totalHardness: { min: 0.5, max: 12 },
+      alkalinity: { min: 0.5, max: 9 },
     },
   },
   espresso: {
@@ -74,8 +80,12 @@ export const TARGET_ZONES: Record<SingleCoffeeTarget, TargetZones> = {
       alkalinity: { min: 2, max: 4 },
     },
     extended: {
-      totalHardness: { min: 3, max: 7 },
-      alkalinity: { min: 2, max: 4 },
+      totalHardness: { min: 2, max: 7.5 },
+      alkalinity: { min: 1.5, max: 4.8 },
+    },
+    usable: {
+      totalHardness: { min: 1, max: 12 },
+      alkalinity: { min: 0.8, max: 9 },
     },
   },
 };
@@ -88,8 +98,10 @@ export const TARGET_RANGES: Record<SingleCoffeeTarget, TargetRange> = {
 const CALCIUM_TO_DH = 7.1;
 const MAGNESIUM_TO_DH = 4.35;
 const BICARBONATE_TO_ALKALINITY = 21.8;
-const HARDNESS_GRADE_TOLERANCE = 3;
-const ALKALINITY_GRADE_TOLERANCE = 3;
+const HARDNESS_GRADE_TOLERANCE = 7;
+const ALKALINITY_GRADE_TOLERANCE = 7;
+const CORE_HARDNESS_TOLERANCE = 1.2;
+const CORE_ALKALINITY_TOLERANCE = 1.2;
 
 export function calculateWaterHardness(minerals: WaterMinerals): WaterHardness {
   validateMineral("calcium", minerals.calcium);
@@ -130,9 +142,10 @@ export function evaluateWaterProfile(
   validateProfile(profile);
   const coreDistance = distanceToRange(profile, target, "core");
   const extendedDistance = distanceToRange(profile, target, "extended");
-  const zone = getTargetZone(coreDistance, extendedDistance);
+  const usableDistance = distanceToRange(profile, target, "usable");
+  const zone = getTargetZone(coreDistance, extendedDistance, usableDistance);
   const grade = gradeForZone(profile, target, zone);
-  const roundedGrade = zone === "core" ? 1 : Math.max(2, Math.round(grade));
+  const roundedGrade = Math.max(1, Math.round(grade));
 
   return {
     target,
@@ -140,9 +153,11 @@ export function evaluateWaterProfile(
     grade,
     roundedGrade,
     label: labelForGrade(roundedGrade),
-    distance: zone === "outside" ? extendedDistance : coreDistance,
+    distance:
+      zone === "outside" ? usableDistance : zone === "usable" ? extendedDistance : coreDistance,
     inIdealRange: zone === "core",
     inExtendedRange: zone === "core" || zone === "extended",
+    inUsableRange: zone === "core" || zone === "extended" || zone === "usable",
   };
 }
 
@@ -185,13 +200,31 @@ function normalizedDistanceToRange(
   return Math.hypot(hardnessDistance, alkalinityDistance);
 }
 
-function getTargetZone(coreDistance: number, extendedDistance: number): WaterTargetZone {
+function normalizedCoreDistance(profile: WaterHardness, target: SingleCoffeeTarget): number {
+  const range = TARGET_ZONES[target].core;
+  const hardnessDistance =
+    axisDistance(profile.totalHardness, range.totalHardness) / CORE_HARDNESS_TOLERANCE;
+  const alkalinityDistance =
+    axisDistance(profile.alkalinity, range.alkalinity) / CORE_ALKALINITY_TOLERANCE;
+
+  return Math.hypot(hardnessDistance, alkalinityDistance);
+}
+
+function getTargetZone(
+  coreDistance: number,
+  extendedDistance: number,
+  usableDistance: number,
+): WaterTargetZone {
   if (coreDistance === 0) {
     return "core";
   }
 
   if (extendedDistance === 0) {
     return "extended";
+  }
+
+  if (usableDistance === 0) {
+    return "usable";
   }
 
   return "outside";
@@ -207,12 +240,17 @@ function gradeForZone(
   }
 
   if (zone === "extended") {
-    const normalizedCoreDistance = normalizedDistanceToRange(profile, target, "core");
-    return clamp(2 + Math.min(normalizedCoreDistance ** 2 * 0.25, 0.49), 2, 2.49);
+    const coreMiss = normalizedCoreDistance(profile, target);
+    return clamp(1 + coreMiss ** 2 * 0.35, 1, 2.49);
   }
 
-  const normalizedExtendedDistance = normalizedDistanceToRange(profile, target, "extended");
-  return clamp(2 + normalizedExtendedDistance ** 2 * 1.5, 2, 6);
+  if (zone === "usable") {
+    const normalizedExtendedDistance = normalizedDistanceToRange(profile, target, "extended");
+    return clamp(2.35 + normalizedExtendedDistance ** 2 * 0.9, 2.35, 3.49);
+  }
+
+  const normalizedUsableDistance = normalizedDistanceToRange(profile, target, "usable");
+  return clamp(3.5 + normalizedUsableDistance ** 2 * 1.4, 3.5, 6);
 }
 
 function axisDistance(value: number, range: { min: number; max: number }): number {

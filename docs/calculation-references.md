@@ -1,6 +1,6 @@
 # Kaffeewasser-Berechnung und Referenzen
 
-Stand: 2026-04-30
+Stand: 2026-05-06
 
 ## Formeln
 
@@ -19,32 +19,44 @@ Quelle: [Kaffeemacher Kaffeewasser-Anleitung](https://kaffeemacher.de/blogs/kaff
 ## App-Zielbereiche
 
 Die App bewertet Wasser nicht mehr nur gegen den sehr engen
-Kaffeemacher-Filterbereich. Stattdessen nutzt sie pro Getränk zwei Zonen:
+Kaffeemacher-Filterbereich. Stattdessen nutzt sie pro Getraenk drei Zonen:
 
 - `Kernbereich`: enger Bereich, der aus den strengeren Quellen gut ableitbar ist.
-- `Erweiterter Bereich`: fachlich plausibler Bereich, in dem die Quellen weniger
-  einheitlich sind, besonders wegen der breiteren SCA-/Water-for-Coffee-Spanne.
+- `Erweiterter Bereich`: fachlich plausibler Praxisbereich, der aus SCA/SCAE,
+  deutschen Specialty-Quellen und Espresso-Maschinen-Spezifikationen ableitbar
+  ist.
+- `Toleranzbereich`: Wasser, das nicht ideal ist, aber in der App nicht als
+  Katastrophe erscheinen soll. Sehr knappe Treffer koennen noch Note 2
+  bekommen, der Bereich fuehrt ansonsten typischerweise zu Note 3.
 
-| Ziel         | Kernbereich GH | Kernbereich Alk | Erweiterter Bereich GH | Erweiterter Bereich Alk | Begruendung                                                                                                                                                                         |
-| ------------ | -------------: | --------------: | ---------------------: | ----------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Filterkaffee |      `2-3 dGH` |     `1-2 d Alk` |              `2-7 dGH` |             `1-4 d Alk` | Nimmt den engen Kaffeemacher-/Earlybird-/Roastmarket-Filterbereich als Kern ernst, laesst aber SCA-/Water-for-Coffee-kompatible Wasser wie Volvic nicht unnoetig schlecht aussehen. |
-| Espresso     |      `3-6 dGH` |     `2-4 d Alk` |              `3-7 dGH` |             `2-4 d Alk` | Kaffeemacher und Earlybird nennen `3-6 dGH`; Roastmarket und Coffee Circle nennen fuer Espresso ebenfalls bzw. sinngemaess `3-7 dGH`.                                               |
+| Ziel         | Kernbereich GH | Kernbereich Alk | Erweiterter Bereich GH | Erweiterter Bereich Alk | Toleranz GH  | Toleranz Alk    | Begruendung                                                                                                                                                                                                                              |
+| ------------ | -------------: | --------------: | ---------------------: | ----------------------: | -----------: | --------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Filterkaffee |      `2-3 dGH` |     `1-2 d Alk` |          `1.5-8 dGH`   |         `0.8-4.5 d Alk` | `0.5-12 dGH` | `0.5-9 d Alk`   | Nimmt den engen Kaffeemacher-/Earlybird-/Roastmarket-Filterbereich als Kern ernst, laesst aber SCA-/SCAE-kompatible Wasser nicht unnoetig schlecht aussehen.                                                                            |
+| Espresso     |      `3-6 dGH` |     `2-4 d Alk` |          `2-7.5 dGH`   |         `1.5-4.8 d Alk` |   `1-12 dGH` |   `0.8-9 d Alk` | Kaffeemacher, Coffee Circle, Roastmarket, La Marzocco und Portioli stuetzen einen hoeheren Espresso-Praxisbereich. Die besonders grosszuegige Alkalinitaets-Toleranz bleibt bewusst nur Toleranz, nicht Ideal- oder Empfehlungsbereich. |
 
 Wasser im Kernbereich bekommt Note 1. Wasser im erweiterten Bereich wird als
-gut bewertet, aber nicht als Kern-Treffer. Wasser ausserhalb dieser Bereiche
-wird weiterhin graduell bewertet. Ein kleiner Abstand ergibt also eher Note 2
-statt "ungeeignet".
+gut bewertet, aber nicht als Kern-Treffer. Wasser im Toleranzbereich wird als
+brauchbar bewertet. Wasser ausserhalb dieser Bereiche wird weiterhin graduell
+bewertet. Ein kleiner Abstand ergibt also eher Note 2 oder 3 statt
+"ungeeignet".
 
 ## Quellenabgleich
 
 | Quelle                                                                                                                                                                                                                                                                                                                           | Relevanz fuer die App                                                                                                                                                                                                                       | In Konstanten uebernommen?                                                                                                         |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | [Kaffeemacher](https://kaffeemacher.de/blogs/kaffeewissen/kaffeewasser)                                                                                                                                                                                                                                                          | Liefert die Etikettenformeln und sehr enge Idealbereiche: Filter `2-3 dGH` / `1-2 d Alk`, Espresso `3-6 dGH` / `2-4 d Alk`.                                                                                                                 | Ja, Formeln direkt; Zielbereiche als enger Referenzpunkt.                                                                          |
+| [SCAE Water Chart](https://brandconnect.gr/wp-content/uploads/2021/01/SCAE-water-chart-report.pdf)                                                                                                                                                                                                                                | Setzt Gesamthaerte und Alkalinitaet als zentrale Bewertungsachsen. Nennt allgemein `50-175 ppm CaCO3` Haerte (`2.8-9.8 dGH`) und `40-75 ppm CaCO3` Alkalinitaet (`2.2-4.2 d Alk`) und betont, dass Zielwerte je Extraktionsmethode variieren koennen. | Ja, als wichtigster Grund fuer breitere erweiterte Bereiche.                                                                       |
+| [SCA / Marco Wellinger: Water and Coffee Acidity](https://sca.coffee/sca-news/25/issue-9/english/water-and-coffee-acidity-how-to-adapt-your-water-for-different-extraction-methods-25-magazine-issue-9)                                                                                                                           | Begruendet die hoehere Espresso-Toleranz ueber das Beverage Ratio: Bei Espresso steht deutlich weniger Wasser derselben Kaffeemenge gegenueber, daher kann besonders die Alkalinitaet hoeher liegen, bevor die Saeurewahrnehmung gleich stark gepuffert wird. | Ja, vor allem als Begruendung fuer eine grosszuegigere Espresso-Alkalinitaets-Toleranz.                                             |
+| [La Marzocco Water Specifications](https://www.lamarzocco.com/uk/en/technical-questions/la-marzocco-water-specifications/)                                                                                                                                                                                                         | Offizielle Espresso-Maschinen-Spezifikation: Total Hardness `70-100 ppm` (`3.9-5.6 dGH`), Alkalinity `40-80 ppm` (`2.2-4.5 d Alk`), TDS `90-150 ppm`, pH `6.5-8`.                                                                              | Ja, bestaetigt den Espresso-Kern und die erweiterte Alkalinitaets-Oberkante.                                                       |
+| [Sanremo Verona RS Manual](https://www.sanremouk.com/wp-content/uploads/2020/06/verona_rs_manual.pdf)                                                                                                                                                                                                                             | Italienischer Maschinenhersteller; fordert fuer professionelle Espressomaschinen enthaertetes Trinkwasser mit maximal `60/85 ppm` Haerte, also grob `3.4-4.8 dGH`.                                                                              | Ja, als maschinenseitige Plausibilitaetsgrenze fuer Espresso-Haerte.                                                               |
+| [Portioli: Caffe e acqua](https://www.portioli.it/it/blog/caff-e-acqua-l-importanza-della-qualit-dell-acqua-nell-espresso)                                                                                                                                                                                                       | Italienische Roesterei/Academy-Perspektive fuer Espresso: optimale Gesamthaerte etwa `7-10 fH`, also `3.9-5.6 dGH`; zu hartes Wasser kann flach/metallisch wirken, zu weiches Wasser saurer und weniger koerperreich.                         | Ja, bestaetigt den Espresso-Kern und die graduelle Bewertung statt harter Ablehnung.                                                |
 | [SCA Gold Cup Standard PDF](https://coffeegeek.com/wp-content/uploads/2023/10/SCAGoldCupStandard.pdf)                                                                                                                                                                                                                            | Verweist fuer Bruehwasser auf `50-175 ppm CaCO3` Haerte, `40-70 ppm CaCO3` Alkalinitaet und pH `6-8`. Umgerechnet sind das grob `2.8-9.8 dH` und `2.2-3.9 d Alk`.                                                                           | Ja, als breite Plausibilitaetsgrenze fuer Filterkaffee.                                                                            |
 | [Wildkaffee: Wasser fuer Kaffeezubereitung](https://wild-kaffee.com/blogs/zubereitung-von-kaffee/welches-wasser-fuer-kaffeezubereitung)                                                                                                                                                                                          | Fasst SCA-Werte auf Deutsch zusammen: Alkalinitaet `40-70 ppm`, Haerte `50-175 ppm`, etwa `3-10 dH`; TDS ideal `75-150 mg/l`.                                                                                                               | Ja, bestaetigt den breiteren Filterbereich.                                                                                        |
 | [Coffee Circle](https://www.coffeecircle.com/de/e/kaffee-wasser)                                                                                                                                                                                                                                                                 | Nennt `2-3 dH` Filter und `3-7 dH` Espresso, verweist aber zugleich auf SCA/Water for Coffee mit `40-70 ppm` Karbonathaerte (`2.2-4 dH`) und separaten Calcium-/Magnesium-Spannen.                                                          | Ja, bestaetigt breitere Alkalinitaet und Espresso-Oberkante.                                                                       |
 | [Roastmarket](https://www.roastmarket.de/magazin/kaffeewasser-fuer-volles-kaffeearoma/)                                                                                                                                                                                                                                          | Nennt Filter `2-3 dH` und Espresso `3-7 dH`; beschreibt hartes Wasser als aromadaempfend und sehr weiches Wasser als potenziell sauer/bitter.                                                                                               | Ja, bestaetigt Espresso-Oberkante und die graduelle Bewertung.                                                                     |
-| [Espresso Academy](https://espressoacademy.it/en/coffee-guide/the-impact-of-different-water-minerals-on-coffee-extraction/)                                                                                                                                                                                                      | Keine harte Zielzahl, aber klare qualitative Ableitung: Haerte stuetzt Extraktion/Struktur, Alkalinitaet puffert Saeure; zu hohe Alkalinitaet macht Aromen flacher, zu niedrige Haerte duenn.                                               | Ja, als Begruendung fuer Distanz-Scoring statt hartem Ja/Nein.                                                                     |
+| [Espresso Academy](https://espressoacademy.it/en/coffee-guide/the-impact-of-different-water-minerals-on-coffee-extraction/)                                                                                                                                                                                                      | Italienische Trainingsquelle; keine harte Zielzahl, aber klare qualitative Ableitung: Haerte stuetzt Extraktion/Struktur, Alkalinitaet puffert Saeure; zu hohe Alkalinitaet macht Aromen flacher, zu niedrige Haerte und Alkalinitaet koennen Espresso instabil wirken lassen. | Ja, als Begruendung fuer Distanz-Scoring statt hartem Ja/Nein.                                                                     |
+| [Le Piantagioni del Caffe: Acqua](https://www.lepiantagionidelcaffe.com/glossario/acqua/)                                                                                                                                                                                                                                        | Italienische Specialty-Quelle; fasst SCA-nahe Werte zusammen: Haerte `50-175 ppm`, Alkalinitaet `40-70 ppm`, pH `6-8`.                                                                                                                     | Ja, bestaetigt, dass die App neben dem engen Filterkern einen breiteren SCA-kompatiblen Bereich braucht.                           |
+| [Navarini & Rivetti: Water quality for Espresso coffee](https://www.sciencedirect.com/science/article/pii/S0308814609004725)                                                                                                                                                                                                      | Wissenschaftliche Espresso-Quelle aus Italien/Illycaffe. Der Abstract bestaetigt, dass Wasserzusammensetzung, Alkalinitaet und ausgewaehlte Kationen fuer Espresso sensorisch relevant sind; Volltext ist nicht frei verfuegbar.             | Nein, keine Zahlen direkt uebernommen; wissenschaftlicher Kontext fuer die Espresso-spezifische Bewertung.                          |
 | [19grams](https://19grams.coffee/blogs/kaffeelexikon/wasser)                                                                                                                                                                                                                                                                     | Nennt SCA `50-175 mg/l` Haerte (`3-10 dH`) und `40-70 mg/l` Alkalinitaet (`2-4 dH`); bewertet Volvic als guten Allrounder.                                                                                                                  | Ja, bestaetigt, dass Volvic fuer Filter nicht abgewertet werden sollte.                                                            |
 | [Vector Coffee Roasters](https://vectorcoffeeroasters.de/2025/09/11/kaffeewasser/)                                                                                                                                                                                                                                               | Nennt fuer Filterkaffee SCA-nahe Werte: GH `50-175 mg/l`, KH `40-75 mg/l`, TDS `75-250 mg/l`, pH `6.5-7.5`; ausserdem grobe Einzelionen-Ideale fuer Ca, Mg und HCO3.                                                                        | Ja, bestaetigt den breiteren Filterbereich. Produktdaten aus diesem Artikel werden nicht in den Mineralwasser-Katalog uebernommen. |
 | [Earlybird Coffee](https://earlybird-coffee.de/blogs/earlybird-blog/kaffeewasser)                                                                                                                                                                                                                                                | Nennt allgemeines Kaffeewasser `3-8 dH`, Espresso `3-6 dH` und Filterkaffee `2-3 dH`; entspricht damit eher der engen Kaffeemacher-Linie.                                                                                                   | Ja, als Gegenpol zur breiteren SCA-Linie dokumentiert; keine weitere Einschraenkung der App-Konstanten.                            |
@@ -57,13 +69,31 @@ statt "ungeeignet".
 
 Die alte App-Logik behandelte `2-3 dGH` und `1-2 d Alk` als den einzigen
 passenden Bereich fuer Filterkaffee. Das ist als enges Ideal aus Kaffeemacher
-vertretbar, aber im Vergleich zu SCA/Water for Coffee zu streng. Mit den zwei
-Zonen bleibt dieser Bereich als Kern sichtbar, waehrend `2-7 dGH` und `1-4 d
-Alk` als erweiterter Bereich realistisch brauchbare Mineralwaesser nicht
-unnoetig hart abstraft.
+vertretbar, aber im Vergleich zu SCA/Water for Coffee zu streng. Mit den drei
+Zonen bleibt dieser Bereich als Kern sichtbar, waehrend `1.5-8 dGH` und
+`0.8-4.5 d Alk` als erweiterter Bereich realistisch brauchbare Mineralwaesser
+nicht unnoetig hart abstraft.
 
 Die zusaetzlich geprueften Quellen vom 2026-04-30 bestaetigen diese Richtung:
 Vector und 19grams stuetzen die breitere SCA-Spanne, Earlybird stuetzt die enge
 Filter-Idealzone, und die Kaffee-Netz-Praxisdiskussionen zeigen, dass viele
 Nutzerinnen und Nutzer gute Ergebnisse auch ausserhalb des engen `2-3 dGH`
 Fensters suchen bzw. mischen.
+
+## Warum Espresso mehr Alkalinitaet vertraegt
+
+Der Quellenabgleich vom 2026-05-06 bestaetigt die Richtung: Espresso kann im
+Vergleich zu Filterkaffee hoeher gepuffertes Wasser vertragen. Der wichtigste
+Grund ist das Beverage Ratio. Bei Espresso steht deutlich weniger Wasser
+derselben Kaffeemenge gegenueber als bei Filterkaffee; dadurch steht auch
+weniger Alkalinitaet zur Verfuegung, um die Saeuren aus dem Kaffee zu puffern.
+Die SCA-/ZHAW-Erklaerung von Marco Wellinger beschreibt diesen Zusammenhang
+direkt.
+
+Fuer die App heisst das aber nicht: "mehr ist immer besser". La Marzocco,
+Sanremo und Portioli zeigen, dass Espresso-Maschinen und Espresso-Sensorik
+weiterhin klare Grenzen brauchen. Deshalb bleibt `3-6 dGH` und `2-4 d Alk` der
+Kernbereich. Der erweiterte Bereich wird auf `2-7.5 dGH` und `1.5-4.8 d Alk`
+angehoben, weil das gut zu den Maschinen- und Praxisquellen passt. Noch hoehere
+Alkalinitaet wird nur als Toleranzbereich angezeigt und sollte nicht als
+allgemeine Empfehlung fuer jede Maschine gelesen werden.

@@ -3,7 +3,7 @@ import { getWatersForTarget, waters } from "../src/index";
 
 describe("waters catalog", () => {
   it("contains a useful trusted-source starter set", () => {
-    expect(waters.length).toBeGreaterThanOrEqual(10);
+    expect(waters.length).toBeGreaterThanOrEqual(50);
   });
 
   it("has complete, unique, non-negative entries", () => {
@@ -13,6 +13,7 @@ describe("waters catalog", () => {
       "manufacturer_lab",
       "official_lab",
       "consumer_test",
+      "retailer",
     ]);
 
     for (const water of waters) {

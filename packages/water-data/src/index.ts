@@ -17,7 +17,7 @@ export type MineralWater = {
   calciumMgL: number;
   magnesiumMgL: number;
   bicarbonateMgL: number;
-  sourceType: "manufacturer" | "manufacturer_lab" | "official_lab" | "consumer_test";
+  sourceType: "manufacturer" | "manufacturer_lab" | "official_lab" | "consumer_test" | "retailer";
   sourceLabel: string;
   sourceUrl: string;
   lastVerified: string;
