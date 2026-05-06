@@ -14,10 +14,10 @@ Kleine React-App zur Berechnung von Kaffeewasser aus Mineralwasser-Etiketten.
 - Alkalinität: `bicarbonateMgL / 21.8`
 
 Die Formeln orientieren sich an der Kaffeemacher-Kaffeewasser-Anleitung. Die Zielbereiche sind
-gegen weitere Referenzen wie SCA/Water for Coffee, Coffee Circle und Roastmarket abgeglichen; der
-Filterbereich hat deshalb einen engen Kernbereich und einen breiteren empfohlenen Bereich. Die App
-zeigt zusätzlich tolerante Schulnoten je Wasser für Filterkaffee und Espresso, statt Wasser hart als
-geeignet/ungeeignet zu klassifizieren.
+gegen weitere Referenzen wie SCA/SCAE, Coffee Circle, Roastmarket, La Marzocco, Sanremo und
+italienische Espresso-Quellen abgeglichen. Die App trennt deshalb Kernbereich, erweiterten Bereich
+und Toleranzbereich und zeigt Schulnoten je Wasser für Filterkaffee und Espresso, statt Wasser hart
+als geeignet/ungeeignet zu klassifizieren.
 
 Details stehen in [docs/calculation-references.md](docs/calculation-references.md).
 
