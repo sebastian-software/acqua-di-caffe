@@ -1,41 +1,34 @@
 # Acqua di Caffè
 
-Kleine React-App zur Berechnung von Kaffeewasser aus Mineralwasser-Etiketten.
+A small React app for calculating coffee water from bottled mineral-water labels.
 
-## Pakete
+## Packages
 
-- `packages/core`: Reine TypeScript-Funktionen für Gesamthärte, Alkalinität, Scoring und Zielbereich-Klassifikation.
-- `packages/water-data`: Lokale JSON-Datenbank stiller Mineralwasser mit geprüften Quellen-URLs.
-- `apps/web`: React/Vite-App für manuelle Eingabe, Suche und Diagramm.
+- `packages/core`: Pure TypeScript functions for total hardness, alkalinity, scoring, and target-zone classification.
+- `packages/water-data`: Local JSON database of still mineral waters with verified source URLs.
+- `apps/web`: React/Vite app for manual input, search, catalog browsing, and charts.
 
-## Formeln
+## Formulas
 
-- Gesamthärte: `calciumMgL / 7.1 + magnesiumMgL / 4.35`
-- Alkalinität: `bicarbonateMgL / 21.8`
+- Total hardness: `calciumMgL / 7.1 + magnesiumMgL / 4.35`
+- Alkalinity: `bicarbonateMgL / 21.8`
 
-Die Formeln orientieren sich an der Kaffeemacher-Kaffeewasser-Anleitung. Die Zielbereiche sind
-gegen weitere Referenzen wie SCA/SCAE, Coffee Circle, Roastmarket, La Marzocco, Sanremo und
-italienische Espresso-Quellen abgeglichen. Die App trennt deshalb Kernbereich, erweiterten Bereich
-und Toleranzbereich und zeigt Schulnoten je Wasser für Filterkaffee und Espresso, statt Wasser hart
-als geeignet/ungeeignet zu klassifizieren.
+The formulas follow the Kaffeemacher coffee-water guide because they map directly to the mineral values printed on bottle labels. The app's target ranges are cross-checked against SCA/SCAE, Coffee Circle, Roastmarket, La Marzocco, Sanremo, and Italian espresso references. The scoring model separates core, extended, and usable tolerance zones and shows school-style grades for filter coffee and espresso instead of forcing a hard suitable/unsuitable decision.
 
-Details stehen in [docs/calculation-references.md](docs/calculation-references.md).
+Details are documented in [docs/calculation-references.md](docs/calculation-references.md).
 
-## Datenquellen
+## Data Sources
 
-Der Mineralwasser-Katalog nimmt nur Einträge auf, deren Mineralwerte über Herstellerangaben,
-offizielle Produktdatenblätter, amtliche Laboranalysen oder seriöse Verbraucherprüfungen belegbar
-sind. Aggregierte Drittseiten ohne Primärquelle werden per Test ausgeschlossen. Dadurch ist der
-Katalog kleiner, aber nachvollziehbarer und Git-reviewbar.
+The mineral-water catalog only accepts entries whose mineral values can be verified through manufacturer information, official product sheets, public laboratory analyses, or reputable consumer tests. Aggregated third-party pages without a primary source are rejected by tests. This keeps the catalog smaller, but more traceable and reviewable in Git.
 
-## Entwicklung
+## Development
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-## Prüfung
+## Verification
 
 ```bash
 pnpm test:run
@@ -44,4 +37,4 @@ pnpm build
 
 ## GitHub Pages
 
-Der Workflow unter `.github/workflows/pages.yml` installiert mit `pnpm`, führt Tests aus, baut `apps/web` und deployed `apps/web/dist` nach GitHub Pages. Für den Pages-Build setzt Vite den Base-Pfad auf `/acqua-di-caffe/`.
+The workflow in `.github/workflows/pages.yml` installs dependencies with `pnpm`, runs the test suite, builds `apps/web`, and deploys `apps/web/dist` to GitHub Pages. For the Pages build, Vite uses `/acqua-di-caffe/` as its base path.
